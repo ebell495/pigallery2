@@ -1,9 +1,9 @@
 #-----------------BUILDER-----------------
 #-----------------------------------------
-FROM node:18-bullseye AS builder
+FROM node:20-bullseye AS builder
 # LABEL maintainer="Patrik J. Braun"
 # copying only package{-lock}.json to make node_modules cachable
-RUN git clone https://github.com/bpatrik/pigallery2.git /build
+RUN git clone https://github.com/ebell495/pigallery2.git /build
 WORKDIR /build
 RUN npm install --unsafe-perm \
     && mkdir -p /build/release/data/config \
@@ -16,7 +16,7 @@ RUN npm install --unsafe-perm
 
 #-----------------MAIN--------------------
 #-----------------------------------------
-FROM node:18-bullseye-slim AS main
+FROM node:20-bullseye-slim AS main
 WORKDIR /app
 ENV NODE_ENV=production \
     # overrides only the default value of the settings (the actualy value can be overwritten through config.json)
