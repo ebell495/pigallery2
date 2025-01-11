@@ -1,22 +1,26 @@
 #-----------------BUILDER-----------------
 #-----------------------------------------
-FROM node:20-bullseye AS builder
+FROM node:18-bullseye AS builder
 # LABEL maintainer="Patrik J. Braun"
 # copying only package{-lock}.json to make node_modules cachable
 RUN git clone https://github.com/ebell495/pigallery2.git /build
 WORKDIR /build
 RUN npm install --unsafe-perm \
+    && cp batch-cluster-fix/BatchCluster.d.ts.tmp node_modules/batch-cluster/dist/BatchCluster.d.ts \
+    && cp batch-cluster-fix/BatchProcess.d.ts.tmp node_modules/batch-cluster/dist/BatchProcess.d.ts \
     && mkdir -p /build/release/data/config \
     && mkdir -p /build/release/data/db \
     && mkdir -p /build/release/data/images \
     && mkdir -p /build/release/data/tmp \
     && npm run create-release
 WORKDIR /build/release
-RUN npm install --unsafe-perm
+RUN npm install --unsafe-perm \
+    && cp /build/batch-cluster-fix/BatchCluster.d.ts node_modules/batch-cluster/dist/BatchCluster.d.ts \
+    && cp /build/batch-cluster-fix/BatchProcess.d.ts node_modules/batch-cluster/dist/BatchProcess.d.ts
 
 #-----------------MAIN--------------------
 #-----------------------------------------
-FROM node:20-bullseye-slim AS main
+FROM node:18-bullseye-slim AS main
 WORKDIR /app
 ENV NODE_ENV=production \
     # overrides only the default value of the settings (the actualy value can be overwritten through config.json)
