@@ -18,6 +18,8 @@ export class SearchQueryParserService {
     maxPersonCount: 'max-faces',
     maxResolution: 'max-resolution',
     minResolution: 'min-resolution',
+    minAspectRatio: 'min-aspect-ratio',
+    maxAspectRatio: 'max-aspect-ratio',
     orientation: 'orientation',
 
     years_ago: '%d-years-ago',

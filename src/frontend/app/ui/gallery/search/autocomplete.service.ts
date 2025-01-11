@@ -102,6 +102,11 @@ export class AutoCompleteService {
         = SearchQueryTypes.min_resolution;
     this.noACKeywordsMap[this.searchQueryParserService.keywords.maxResolution]
         = SearchQueryTypes.max_resolution;
+
+    this.noACKeywordsMap[this.searchQueryParserService.keywords.minAspectRatio]
+        = SearchQueryTypes.min_aspect_ratio;
+    this.noACKeywordsMap[this.searchQueryParserService.keywords.maxAspectRatio]
+        = SearchQueryTypes.max_aspect_ratio;
   }
 
   public autoComplete(text: {

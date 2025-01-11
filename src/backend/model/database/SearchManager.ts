@@ -14,9 +14,11 @@ import {
   DatePatternSearch,
   DistanceSearch,
   FromDateSearch,
+  MaxAspectRatioSearch,
   MaxPersonCountSearch,
   MaxRatingSearch,
   MaxResolutionSearch,
+  MinAspectRatioSearch,
   MinPersonCountSearch,
   MinRatingSearch,
   MinResolutionSearch,
@@ -745,6 +747,54 @@ export class SearchManager {
             (query as MaxResolutionSearch).value * 1000 * 1000;
           q.where(
             `media.metadata.size.width * media.metadata.size.height ${relation} :max${queryId}`,
+            textParam
+          );
+
+          return q;
+        });
+
+      case SearchQueryTypes.min_aspect_ratio:
+        if (directoryOnly) {
+          throw new Error('not supported in directoryOnly mode');
+        }
+        return new Brackets((q): unknown => {
+          if (typeof (query as MinAspectRatioSearch).value === 'undefined') {
+            throw new Error(
+              'Invalid search query: Rating Query should contain min or max value'
+            );
+          }
+
+          const relation = (query as TextSearch).negate ? '<' : '>=';
+
+          const textParam: { [key: string]: unknown } = {};
+          textParam['min' + queryId] =
+            (query as MinAspectRatioSearch).value / 100.0;
+          q.where(
+            `((media.metadata.size.width * 1.0) / (media.metadata.size.height * 1.0)) ${relation} :min${queryId}`,
+            textParam
+          );
+
+          return q;
+        });
+
+      case SearchQueryTypes.max_aspect_ratio:
+        if (directoryOnly) {
+          throw new Error('not supported in directoryOnly mode');
+        }
+        return new Brackets((q): unknown => {
+          if (typeof (query as MaxAspectRatioSearch).value === 'undefined') {
+            throw new Error(
+              'Invalid search query: Rating Query should contain min or max value'
+            );
+          }
+
+          const relation = (query as TextSearch).negate ? '>' : '<=';
+
+          const textParam: { [key: string]: unknown } = {};
+          textParam['max' + queryId] =
+            (query as MaxAspectRatioSearch).value / 100.0;
+          q.where(
+            `((media.metadata.size.width * 1.0) / (media.metadata.size.height * 1.0)) ${relation} :max${queryId}`,
             textParam
           );
 

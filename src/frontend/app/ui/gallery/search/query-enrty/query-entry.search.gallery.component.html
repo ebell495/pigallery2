@@ -232,6 +232,39 @@
           <span class="input-group-text">Mpx</span>
         </div>
       </div>
+
+      <div *ngSwitchCase="SearchQueryTypes.min_aspect_ratio" class="col-10 col-lg">
+        <div class="input-group">
+          <input [id]="'minAspectRatio'+id"
+                 [name]="'minAspectRatio'+id"
+                 title="Minimum Aspect Ratio"
+                 placeholder="100"
+                 i18n-title
+                 [min]="0"
+                 class="form-control input-md"
+                 [(ngModel)]="AsRangeQuery.value"
+                 (ngModelChange)="onChange()"
+                 type="number">
+          <span class="input-group-text">R</span>
+        </div>
+      </div>
+
+      <div *ngSwitchCase="SearchQueryTypes.max_aspect_ratio" class="col-10 col-lg">
+        <div class="input-group">
+          <input [id]="'maxAspectRatio'+id"
+                 [name]="'maxAspectRatio'+id"
+                 title="Maximum Aspect Ratio"
+                 placeholder="200"
+                 i18n-title
+                 [min]="0"
+                 class="form-control input-md"
+                 [(ngModel)]="AsRangeQuery.value"
+                 (ngModelChange)="onChange()"
+                 type="number">
+          <span class="input-group-text">R</span>
+        </div>
+      </div>
+
       <div *ngSwitchCase="SearchQueryTypes.orientation" class="col-10 col-lg d-flex">
         <div class="input-group col-md-6">
           <select [id]="'orientation-select'+id"

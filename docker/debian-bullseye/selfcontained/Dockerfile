@@ -29,7 +29,7 @@ ENV NODE_ENV=production \
 
 EXPOSE 80
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends ca-certificates wget ffmpeg \
+    && apt-get install -y --no-install-recommends ca-certificates wget ffmpeg exiftool \
     && apt-get clean -q -y \
     && rm -rf /var/lib/apt/lists/*
 COPY --from=builder /build/release /app

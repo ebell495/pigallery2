@@ -35,6 +35,8 @@ export interface QueryKeywords {
   kmFrom: string;
   maxResolution: string;
   minResolution: string;
+  maxAspectRatio: string;
+  minAspectRatio: string;
   maxRating: string;
   minRating: string;
   maxPersonCount: string;
@@ -68,6 +70,8 @@ export const defaultQueryKeywords: QueryKeywords = {
   minPersonCount: 'min-persons',
   maxResolution: 'max-resolution',
   minResolution: 'min-resolution',
+  minAspectRatio: 'min-aspect-ratio',
+  maxAspectRatio: 'max-aspect-ratio',
 
   kmFrom: 'km-from',
   orientation: 'orientation',
@@ -321,6 +325,8 @@ export class SearchQueryParser {
         addValueRangeParser(this.keywords.maxRating, SearchQueryTypes.max_rating) ||
         addValueRangeParser(this.keywords.minResolution, SearchQueryTypes.min_resolution) ||
         addValueRangeParser(this.keywords.maxResolution, SearchQueryTypes.max_resolution) ||
+        addValueRangeParser(this.keywords.minAspectRatio, SearchQueryTypes.min_aspect_ratio) ||
+        addValueRangeParser(this.keywords.maxAspectRatio, SearchQueryTypes.max_aspect_ratio) ||
         addValueRangeParser(this.keywords.minPersonCount, SearchQueryTypes.min_person_count) ||
         addValueRangeParser(this.keywords.maxPersonCount, SearchQueryTypes.max_person_count);
 
@@ -551,6 +557,22 @@ export class SearchQueryParser {
       case SearchQueryTypes.max_resolution:
         return (
             this.keywords.maxResolution +
+            colon +
+            (isNaN((query as RangeSearch).value)
+                ? ''
+                : (query as RangeSearch).value)
+        );
+      case SearchQueryTypes.min_aspect_ratio:
+        return (
+          this.keywords.minAspectRatio +
+          colon +
+          (isNaN((query as RangeSearch).value)
+              ? ''
+              : (query as RangeSearch).value)
+        );
+      case SearchQueryTypes.max_aspect_ratio:
+        return (
+            this.keywords.maxAspectRatio +
             colon +
             (isNaN((query as RangeSearch).value)
                 ? ''

@@ -16,6 +16,8 @@ export enum SearchQueryTypes {
   max_resolution,
   min_person_count,
   max_person_count,
+  min_aspect_ratio,
+  max_aspect_ratio,
 
   distance = 50,
   orientation,
@@ -53,11 +55,13 @@ export const MinRangeSearchQueryTypes = [
   SearchQueryTypes.from_date,
   SearchQueryTypes.min_rating,
   SearchQueryTypes.min_resolution,
+  SearchQueryTypes.min_aspect_ratio,
 ];
 export const MaxRangeSearchQueryTypes = [
   SearchQueryTypes.to_date,
   SearchQueryTypes.max_rating,
   SearchQueryTypes.max_resolution,
+  SearchQueryTypes.max_aspect_ratio,
 ];
 
 export const RangeSearchQueryTypes = MinRangeSearchQueryTypes.concat(
@@ -76,6 +80,8 @@ rangedTypePairs[SearchQueryTypes.from_date] = SearchQueryTypes.to_date;
 rangedTypePairs[SearchQueryTypes.min_rating] = SearchQueryTypes.max_rating;
 rangedTypePairs[SearchQueryTypes.min_resolution] =
     SearchQueryTypes.max_resolution;
+rangedTypePairs[SearchQueryTypes.min_aspect_ratio] =
+    SearchQueryTypes.max_aspect_ratio;
 // add the other direction too
 for (const key of Object.keys(rangedTypePairs)) {
   rangedTypePairs[rangedTypePairs[key]] = key;
@@ -119,6 +125,8 @@ export const SearchQueryDTOUtils = {
       case SearchQueryTypes.max_rating:
       case SearchQueryTypes.min_resolution:
       case SearchQueryTypes.max_resolution:
+      case SearchQueryTypes.min_aspect_ratio:
+      case SearchQueryTypes.max_aspect_ratio:
       case SearchQueryTypes.distance:
       case SearchQueryTypes.any_text:
       case SearchQueryTypes.person:
@@ -234,6 +242,16 @@ export interface MinResolutionSearch extends RangeSearch {
 export interface MaxResolutionSearch extends RangeSearch {
   type: SearchQueryTypes.max_resolution;
   value: number; // in megapixels
+}
+
+export interface MinAspectRatioSearch extends RangeSearch {
+  type: SearchQueryTypes.min_aspect_ratio;
+  value: number;
+}
+
+export interface MaxAspectRatioSearch extends RangeSearch {
+  type: SearchQueryTypes.max_aspect_ratio;
+  value: number;
 }
 
 export interface OrientationSearch {
