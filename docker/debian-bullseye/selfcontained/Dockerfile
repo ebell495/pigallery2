@@ -3,6 +3,7 @@
 FROM node:18-bullseye AS builder
 # LABEL maintainer="Patrik J. Braun"
 # copying only package{-lock}.json to make node_modules cachable
+COPY package.json package-lock.json /build1/
 RUN git clone https://github.com/ebell495/pigallery2.git /build
 WORKDIR /build
 RUN npm install --unsafe-perm \
@@ -15,8 +16,8 @@ RUN npm install --unsafe-perm \
     && npm run create-release
 WORKDIR /build/release
 RUN npm install --unsafe-perm \
-    && cp /build/batch-cluster-fix/BatchCluster.d.ts node_modules/batch-cluster/dist/BatchCluster.d.ts \
-    && cp /build/batch-cluster-fix/BatchProcess.d.ts node_modules/batch-cluster/dist/BatchProcess.d.ts
+    && cp /build/batch-cluster-fix/BatchCluster.d.ts.tmp node_modules/batch-cluster/dist/BatchCluster.d.ts \
+    && cp /build/batch-cluster-fix/BatchProcess.d.ts.tmp node_modules/batch-cluster/dist/BatchProcess.d.ts
 
 #-----------------MAIN--------------------
 #-----------------------------------------
