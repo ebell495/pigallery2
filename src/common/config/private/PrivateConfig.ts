@@ -652,7 +652,7 @@ export class ServerJobConfig {
     new JobScheduleConfig(
       DefaultsJobs[DefaultsJobs.Indexing],
       DefaultsJobs[DefaultsJobs.Indexing],
-      new NeverJobTriggerConfig(),
+      new PeriodicJobTriggerConfig(),
       {indexChangesOnly: true} // set config explicitly, so it is not undefined on the UI
     ),
     new JobScheduleConfig(
