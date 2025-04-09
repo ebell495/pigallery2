@@ -156,6 +156,7 @@ export class JobManager implements IJobListener, IObjectManager {
       new Date(),
       schedule
     );
+    Logger.info(LOG_TAG, 'Next run for ' + schedule.jobName + ' is ' + nextDate);
     if (nextDate && nextDate.getTime() > Date.now()) {
       Logger.debug(
         LOG_TAG,
