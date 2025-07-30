@@ -28,8 +28,7 @@ ENV NODE_ENV=production \
 
 EXPOSE 80
 RUN apk add --no-cache --repository https://alpine.global.ssl.fastly.net/alpine/v3.17/community/ \
-    vips vips-cpp vips-heif vips-magick ffmpeg exiftool && \
-    rm /var/cache/apk/*
+    vips vips-cpp vips-heif vips-magick ffmpeg exiftool
 COPY --from=builder /app /app
 
 # Run build time diagnostics to make sure the app would work after build is finished
