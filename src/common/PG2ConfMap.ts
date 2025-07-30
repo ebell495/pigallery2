@@ -14,8 +14,8 @@ Utils.enumToArray(SortByTypes).forEach(kv => {
     PG2ConfMap.sorting['.order_random.pg2conf'] = {method: kv.key, ascending: null} as SortingMethod;
     return;
   }
-  PG2ConfMap.sorting['.order_descending' + kv.value.toLowerCase() + '.pg2conf'] = {method: kv.key, ascending: false} as SortingMethod;
-  PG2ConfMap.sorting['.order_ascending' + kv.value.toLowerCase() + '.pg2conf'] = {method: kv.key, ascending: true} as SortingMethod;
+  PG2ConfMap.sorting['.order_descending_' + kv.value.toLowerCase() + '.pg2conf'] = {method: kv.key, ascending: false} as SortingMethod;
+  PG2ConfMap.sorting['.order_ascending_' + kv.value.toLowerCase() + '.pg2conf'] = {method: kv.key, ascending: true} as SortingMethod;
 });
 
 /**

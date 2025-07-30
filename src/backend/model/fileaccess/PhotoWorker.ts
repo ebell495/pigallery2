@@ -103,7 +103,7 @@ export class VideoRendererFactory {
             .on('error', (e): void => {
               reject('[FFmpeg] ' + e.toString() + ' executed: ' + executedCmd);
             })
-            .outputOptions(['-qscale:v 4']);
+            .outputOptions(['-qscale:v 50']);
           if (input.makeSquare === false) {
             const newSize =
               width < height

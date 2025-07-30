@@ -36,6 +36,7 @@
     "url": "https://github.com/bpatrik/PiGallery2/issues"
   },
   "dependencies": {
+    "adm-zip": "0.5.16",
     "archiver": "5.3.1",
     "bcrypt": "5.1.0",
     "better-sqlite3": "8.2.0",
@@ -83,6 +84,7 @@
     "@ng-icons/core": "24.0.0",
     "@ng-icons/ionicons": "24.0.0",
     "@ngx-loading-bar/core": "6.0.2",
+    "@types/adm-zip": "^0.5.7",
     "@types/archiver": "5.3.1",
     "@types/bcrypt": "5.0.0",
     "@types/bcryptjs": "2.4.2",

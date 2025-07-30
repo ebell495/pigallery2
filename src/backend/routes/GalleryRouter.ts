@@ -202,7 +202,7 @@ export class GalleryRouter {
     app.get(
         Config.Server.apiPath + '/gallery/content/:mediaPath(*.(' +
         SupportedFormats.Videos.join('|') +
-        '))/:size?',
+        '))/:size',
         // common part
         AuthenticationMWs.authenticate,
         AuthenticationMWs.normalizePathParam('mediaPath'),

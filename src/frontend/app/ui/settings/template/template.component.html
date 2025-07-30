@@ -124,14 +124,17 @@
             <!-- Sub category without header and menu item -->
             <ng-container *ngIf="!topLevel || !rStates?.value.__state[ck].tags?.uiIcon">
               <div class="row mt-2">
-                <div class="col-auto">
+                <div class="headerless-sub-category-start">
+                  <hr/>
+                </div>
+                <div class="col-auto  headerless-sub-category-title d-flex align-items-center ">
                   <h5>{{ rStates?.value.__state[ck].tags?.name || ck }}</h5>
                 </div>
                 <div class="col">
                   <hr/>
                 </div>
               </div>
-              <div class="mt-2">
+              <div class="mt-2  headerless-sub-category-content">
                 <ng-container
                   *ngTemplateOutlet="Recursion; context:{ rStates: rStates.value.__state[ck], confPath:confPath+'.'+ck }"
                 ></ng-container>

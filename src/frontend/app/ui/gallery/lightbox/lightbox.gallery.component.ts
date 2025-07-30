@@ -442,6 +442,7 @@ export class GalleryLightboxComponent implements OnDestroy, OnInit {
         queryParams: this.queryService.getParams(
           {media: this.gridPhotoQL.get(photoIndex).gridMedia.media, playing: this.slideShowRunning}
         ),
+        replaceUrl: true,
       })
       .then(() => {
         this.piTitleService.setMediaTitle(this.gridPhotoQL.get(photoIndex).gridMedia);

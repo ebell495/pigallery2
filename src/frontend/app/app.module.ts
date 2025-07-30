@@ -179,7 +179,11 @@ import {
   ionVideocamOutline,
   ionVolumeMediumOutline,
   ionVolumeMuteOutline,
-  ionWarningOutline
+  ionWarningOutline,
+  ionOpenOutline,
+  ionRefresh,
+  ionExtensionPuzzleOutline,
+  ionList
 } from '@ng-icons/ionicons';
 import {SafeHtmlPipe} from './pipes/SafeHTMLPipe';
 import {DatePipe} from '@angular/common';
@@ -193,6 +197,7 @@ import {StringifyGridSize} from './pipes/StringifyGridSize';
 import {GalleryNavigatorService} from './ui/gallery/navigator/navigator.service';
 import {GridSizeIconComponent} from './ui/utils/grid-size-icon/grid-size-icon.component';
 import {SortingMethodIconComponent} from './ui/utils/sorting-method-icon/sorting-method-icon.component';
+import { ExtensionInstallerComponent } from './ui/settings/extension-installer/extension-installer.component';
 
 @Injectable()
 export class MyHammerConfig extends HammerGestureConfig {
@@ -256,7 +261,7 @@ Marker.prototype.options.icon = MarkerFactory.defIcon;
       ionTimeOutline, ionCheckmarkOutline, ionPulseOutline, ionResizeOutline,
       ionCloudOutline, ionChatboxOutline, ionServerOutline, ionFileTrayFullOutline, ionBrushOutline,
       ionBrowsersOutline, ionUnlinkOutline, ionSquareOutline, ionGridOutline,
-      ionAppsOutline
+      ionAppsOutline,ionOpenOutline,ionRefresh,ionExtensionPuzzleOutline,ionList
     }),
     ClipboardModule,
     TooltipModule.forRoot(),
@@ -345,7 +350,8 @@ Marker.prototype.options.icon = MarkerFactory.defIcon;
     SortingMethodIconComponent,
     GridSizeIconComponent,
     SafeHtmlPipe,
-    SortingMethodSettingsEntryComponent
+    SortingMethodSettingsEntryComponent,
+    ExtensionInstallerComponent
   ],
   providers: [
     {provide: HTTP_INTERCEPTORS, useClass: CSRFInterceptor, multi: true},

@@ -32,7 +32,7 @@ export class ServerExtensionsEntryConfig {
       name: $localize`Extension folder`,
       priority: ConfigPriority.underTheHood,
     },
-    description: $localize`Folder where the app stores all extensions. Individual extensions live in their own sub-folders.`,
+    description: $localize`Sub-folder of the given extension.`,
   })
   path: string = '';
 
@@ -51,10 +51,20 @@ export class ServerExtensionsConfig extends ClientExtensionsConfig {
 
   @ConfigProperty({
     tags: {
+      name: $localize`Repository url`,
+      priority: ConfigPriority.underTheHood
+    },
+    description: $localize`Repository url that points to a list of extensions in .md format.`,
+  })
+  repositoryUrl: string = 'https://raw.githubusercontent.com/bpatrik/pigallery2/master/extension/REPOSITORY.md';
+
+  @ConfigProperty({
+    tags: {
       name: $localize`Extension folder`,
       priority: ConfigPriority.underTheHood,
-      dockerSensitive: true
-    },
+      dockerSensitive: true,
+      uiResetNeeded: {server: true},
+    } as TAGS,
     description: $localize`Folder where the app stores all extensions. Individual extensions live in their own sub-folders.`,
   })
   folder: string = 'extensions';
@@ -63,8 +73,9 @@ export class ServerExtensionsConfig extends ClientExtensionsConfig {
     type: ConfigMap,
     tags: {
       name: $localize`Installed extensions`,
+      uiIcon: 'ionList',
       priority: ConfigPriority.advanced
-    }
+    } as TAGS
   })
   extensions: IConfigMap<ServerExtensionsEntryConfig> = new ConfigMap();
 

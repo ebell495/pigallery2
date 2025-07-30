@@ -35,3 +35,14 @@
   color: var(--bs-primary);
   font-weight: bold;
 }
+
+.headerless-sub-category-content .headerless-sub-category-title h5{
+  font-size: 1rem;
+}
+.headerless-sub-category-start{
+  display: none;
+}
+.headerless-sub-category-content .headerless-sub-category-start {
+  width: 2rem;
+  display: block;
+}

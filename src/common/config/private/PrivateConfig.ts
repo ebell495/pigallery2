@@ -1090,7 +1090,7 @@ export class ServerConfig extends ClientConfig {
   @ConfigProperty({
     tags: {
       name: $localize`Extensions`,
-      uiIcon: 'ionCloudOutline'
+      uiIcon: 'ionExtensionPuzzleOutline'
     } as TAGS,
   })
   Extensions: ServerExtensionsConfig = new ServerExtensionsConfig();

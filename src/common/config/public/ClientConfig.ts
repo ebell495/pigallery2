@@ -1579,7 +1579,7 @@ export class ClientConfig {
   @ConfigProperty({
     tags: {
       name: $localize`Extensions`,
-      uiIcon: 'ionCloudOutline'
+      uiIcon: 'ionExtensionPuzzleOutline'
     } as TAGS,
   })
   Extensions: ClientExtensionsConfig = new ClientExtensionsConfig();
