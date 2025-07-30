@@ -232,7 +232,9 @@ export class MetadataLoader {
       }
       try {
         try {
-          MetadataLoader.mapMetadata(metadata, tags);
+          const exif = await exifr.parse(data, exifrOptions);
+          MetadataLoader.mapMetadata(metadata, exif);
+          MetadataLoader.mapKeywords(metadata, tags);
         } catch (err) {
           // ignoring errors
         }
@@ -301,18 +303,18 @@ export class MetadataLoader {
   }
   private static getOrientation(exif: any): number {
     let orientation = 1; //Orientation 1 is normal
-    if (exif.Orientation != undefined) {
-      orientation = parseInt(exif.Orientation as any, 10) as number;
+    if (exif.ifd0?.Orientation != undefined) {
+      orientation = parseInt(exif.ifd0.Orientation as any, 10) as number;
     }
     return orientation;
   }
 
   private static mapImageDimensions(metadata: PhotoMetadata, exif: any, orientation: number) {
     if (metadata.size.width <= 0) {
-      metadata.size.width = exif.ImageWidth || exif.exif?.ExifImageWidth || metadata.size.width;
+      metadata.size.width = exif.ifd0?.ImageWidth || exif.exif?.ExifImageWidth || metadata.size.width;
     }
     if (metadata.size.height <= 0) {
-      metadata.size.height = exif.ImageHeight || exif.exif?.ExifImageHeight || metadata.size.height;
+      metadata.size.height = exif.ifd0?.ImageHeight || exif.exif?.ExifImageHeight || metadata.size.height;
     }
     metadata.size.height = Math.max(metadata.size.height, 1); //ensure height dimension is positive
     metadata.size.width = Math.max(metadata.size.width, 1); //ensure width  dimension is positive

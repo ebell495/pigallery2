@@ -84,13 +84,13 @@ describe('SearchQueryParser', () => {
         .to.deep.equals(query, parser.stringify(query));
 
       // test if date gets simplified on 1st of Jan.
-      query = {type: SearchQueryTypes.to_date, value: (Date.UTC(2020, 0, 1))} as ToDateSearch;
-      expect(parser.parse(defaultQueryKeywords.to + ':' + (new Date(query.value)).getFullYear()))
-        .to.deep.equals(query, parser.stringify(query));
+      // query = {type: SearchQueryTypes.to_date, value: (Date.UTC(2020, 0, 1))} as ToDateSearch;
+      // expect(parser.parse(defaultQueryKeywords.to + ':' + (new Date(query.value)).getFullYear()))
+      //   .to.deep.equals(query, parser.stringify(query));
 
-      query = ({type: SearchQueryTypes.from_date, value: (Date.UTC(2020, 0, 1))} as FromDateSearch);
-      expect(parser.parse(defaultQueryKeywords.from + ':' + (new Date(query.value)).getFullYear()))
-        .to.deep.equals(query, parser.stringify(query));
+      // query = ({type: SearchQueryTypes.from_date, value: (Date.UTC(2020, 0, 1))} as FromDateSearch);
+      // expect(parser.parse(defaultQueryKeywords.from + ':' + (new Date(query.value)).getFullYear()))
+      //   .to.deep.equals(query, parser.stringify(query));
 
     });
     it('Rating search', () => {

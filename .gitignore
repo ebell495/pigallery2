@@ -45,3 +45,5 @@ test.*
 !test/setup-local.js  # Excludes setup.js from the ignore rule
 images1
 images
+demo/
+pigallery2-release/

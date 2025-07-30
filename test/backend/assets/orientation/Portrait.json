@@ -10,7 +10,9 @@
       "name": "Joe"
     }
   ],
-  "keywords": [],
+  "keywords": [
+    "Joe"
+  ],
   "size": {
     "height": 1800,
     "width": 1200
