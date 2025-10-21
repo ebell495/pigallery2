@@ -54,7 +54,7 @@ ENV NODE_ENV=production \
 EXPOSE 80
 ARG TARGETARCH
 RUN apk add --no-cache \
-    vips vips-cpp vips-heif vips-magick ffmpeg exiftool \
+    vips vips-cpp vips-heif vips-magick ffmpeg \
     && if [ "$TARGETARCH" = "amd64" ]; then \
         echo "Building for amd64, adding intel-media-driver" && \
         apk add --no-cache intel-media-driver; \

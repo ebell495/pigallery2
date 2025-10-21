@@ -17,7 +17,6 @@ import {Utils} from '../../../common/Utils';
 import {FFmpegFactory} from '../FFmpegFactory';
 import {ExtensionDecorator} from '../extension/ExtensionDecorator';
 import {DateTags} from './MetadataCreationDate';
-import { exiftool } from 'exiftool-vendored';
 
 const {imageSizeFromFile} = require('image-size/fromFile');
 const LOG_TAG = '[MetadataLoader]';
@@ -217,11 +216,7 @@ export class MetadataLoader {
 
       try {
         try {
-          const [exif, exiftool_meta] = await Promise.all([exifr.parse(fullPath, exifrOptions), exiftool.read(fullPath)]);
-          if (!exif.iptc?.Keywords && exiftool_meta.Keywords) {
-            exif.iptc = exif.iptc || {};
-            exif.iptc.Keywords = exiftool_meta.Keywords;
-          }
+          const exif = await exifr.parse(fullPath, exifrOptions);
           MetadataLoader.mapMetadata(metadata, exif, true);
         } catch (err) {
           try {

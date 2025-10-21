@@ -18,17 +18,13 @@ COPY package.json package-lock.json /build1/
 RUN git clone https://github.com/ebell495/pigallery2.git /build
 WORKDIR /build
 RUN npm install --unsafe-perm \
-    && cp batch-cluster-fix/BatchCluster.d.ts.tmp node_modules/batch-cluster/dist/BatchCluster.d.ts \
-    && cp batch-cluster-fix/BatchProcess.d.ts.tmp node_modules/batch-cluster/dist/BatchProcess.d.ts \
     && mkdir -p /build/release/data/config \
     && mkdir -p /build/release/data/db \
     && mkdir -p /build/release/data/images \
     && mkdir -p /build/release/data/tmp \
     && npm run create-release
 WORKDIR /build/release
-RUN npm install --unsafe-perm --no-package-lock node-addon-api@8.5.0 node-gyp@11.5.0 \
-    && cp batch-cluster-fix/BatchCluster.d.ts.tmp node_modules/batch-cluster/dist/BatchCluster.d.ts \
-    && cp batch-cluster-fix/BatchProcess.d.ts.tmp node_modules/batch-cluster/dist/BatchProcess.d.ts \
+RUN npm install --unsafe-perm --no-package-lock node-addon-api@8.5.0 node-gyp@11.5.0
 
 #-----------------MAIN--------------------
 #-----------------------------------------
@@ -46,7 +42,7 @@ ENV NODE_ENV=production \
 EXPOSE 80
 ARG TARGETARCH
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends ca-certificates wget ffmpeg libvips42 exiftool \
+    && apt-get install -y --no-install-recommends ca-certificates wget ffmpeg libvips42 \
     && if [ "$TARGETARCH" = "amd64" ]; then \
         echo "Building for amd64, adding intel-media-va-driver" && \
         apt-get install -y --no-install-recommends intel-media-va-driver; \
