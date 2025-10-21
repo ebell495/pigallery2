@@ -26,7 +26,9 @@ RUN npm install --unsafe-perm \
     && mkdir -p /build/release/data/tmp \
     && npm run create-release
 WORKDIR /build/release
-RUN npm install --unsafe-perm --no-package-lock node-addon-api@8.5.0 node-gyp@11.5.0
+RUN npm install --unsafe-perm --no-package-lock node-addon-api@8.5.0 node-gyp@11.5.0 \
+    && cp batch-cluster-fix/BatchCluster.d.ts.tmp node_modules/batch-cluster/dist/BatchCluster.d.ts \
+    && cp batch-cluster-fix/BatchProcess.d.ts.tmp node_modules/batch-cluster/dist/BatchProcess.d.ts \
 
 #-----------------MAIN--------------------
 #-----------------------------------------
