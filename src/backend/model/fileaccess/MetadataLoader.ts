@@ -17,6 +17,7 @@ import {Utils} from '../../../common/Utils';
 import {FFmpegFactory} from '../FFmpegFactory';
 import {ExtensionDecorator} from '../extension/ExtensionDecorator';
 import {DateTags} from './MetadataCreationDate';
+import { exiftool } from 'exiftool-vendored';
 
 const {imageSizeFromFile} = require('image-size/fromFile');
 const LOG_TAG = '[MetadataLoader]';
@@ -216,7 +217,11 @@ export class MetadataLoader {
 
       try {
         try {
-          const exif = await exifr.parse(fullPath, exifrOptions);
+          const [exif, exiftool_meta] = await Promise.all([exifr.parse(fullPath, exifrOptions), exiftool.read(fullPath)]);
+          if (!exif.iptc?.Keywords && exiftool_meta.Keywords) {
+            exif.iptc = exif.iptc || {};
+            exif.iptc.Keywords = exiftool_meta.Keywords;
+          }
           MetadataLoader.mapMetadata(metadata, exif, true);
         } catch (err) {
           try {
@@ -337,9 +342,10 @@ export class MetadataLoader {
         }
       }
     }
-    if (exif.Keywords &&
-      exif.Keywords.length > 0) {
-      const subj = Array.isArray(exif.Keywords) ? exif.Keywords : [exif.Keywords];
+    if (exif.iptc &&
+      exif.iptc.Keywords &&
+      exif.iptc.Keywords.length > 0) {
+      const subj = Array.isArray(exif.iptc.Keywords) ? exif.iptc.Keywords : [exif.iptc.Keywords];
       if (metadata.keywords === undefined) {
         metadata.keywords = [];
       }
@@ -640,19 +646,24 @@ export class MetadataLoader {
       result.ifd0 = {...exif.Image};
       // Convert Date objects to ISO strings for consistency with exifr
       if (result.ifd0.DateTime instanceof Date) {
-        result.ifd0.DateTime = result.ifd0.DateTime.toISOString();
+        // Remove the 'Z' suffix and format as YYYY-MM-DD HH:MM:SS
+        const isoString = result.ifd0.DateTime.toISOString();
+        result.ifd0.DateTime = isoString.substring(0, 10) + ' ' + isoString.substring(11, 19);
       }
     }
 
     // Map Photo tags to exif (this is where exifr puts EXIF data)
     if (exif.Photo) {
       result.exif = {...exif.Photo};
-      // Convert Date objects to ISO strings
+      // Convert Date objects to ISO strings without 'Z' suffix, format as YYYY-MM-DD HH:MM:SS
+      // The offset will be added from OffsetTimeOriginal/OffsetTimeDigitized by mapTimestampAndOffset
       if (result.exif.DateTimeOriginal instanceof Date) {
-        result.exif.DateTimeOriginal = result.exif.DateTimeOriginal.toISOString();
+        const isoString = result.exif.DateTimeOriginal.toISOString();
+        result.exif.DateTimeOriginal = isoString.substring(0, 10) + ' ' + isoString.substring(11, 19);
       }
       if (result.exif.DateTimeDigitized instanceof Date) {
-        result.exif.DateTimeDigitized = result.exif.DateTimeDigitized.toISOString();
+        const isoString = result.exif.DateTimeDigitized.toISOString();
+        result.exif.DateTimeDigitized = isoString.substring(0, 10) + ' ' + isoString.substring(11, 19);
       }
     }
 
