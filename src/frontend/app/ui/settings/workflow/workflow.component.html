@@ -23,7 +23,7 @@
               {{ periods[$any(schedule.trigger).periodicity] }} {{ atTimeLocal($any(schedule.trigger).atTime) | date:"HH:mm (z)" }}
             </ng-container>
             <ng-container
-              *ngSwitchCase="JobTriggerType.scheduled">@{{ $any(schedule.trigger).time | date:"medium" }}
+              *ngSwitchCase="JobTriggerType.scheduled">&#64;{{ $any(schedule.trigger).time | date:"medium" }}
             </ng-container>
             <span class="badge bg-secondary" *ngSwitchCase="JobTriggerType.never" i18n>never</span>
             <ng-container *ngSwitchCase="JobTriggerType.after">

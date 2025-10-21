@@ -2,11 +2,14 @@ import {Component, Input, TemplateRef} from '@angular/core';
 import {BsModalService} from 'ngx-bootstrap/modal';
 import {BsModalRef} from 'ngx-bootstrap/modal/bs-modal-ref.service';
 import {SearchQueryDTO} from '../../../../../common/entities/SearchQueryDTO';
+import { NgIconComponent } from '@ng-icons/core';
+import { JsonPipe } from '@angular/common';
 
 @Component({
-  selector: 'app-saved-search-popup-btn',
-  templateUrl: './saved-search-popup.component.html',
-  styleUrls: ['./saved-search-popup.component.css'],
+    selector: 'app-saved-search-popup-btn',
+    templateUrl: './saved-search-popup.component.html',
+    styleUrls: ['./saved-search-popup.component.css'],
+    imports: [NgIconComponent, JsonPipe]
 })
 export class SavedSearchPopupComponent {
   @Input() disabled: boolean;

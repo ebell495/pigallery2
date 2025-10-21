@@ -1,6 +1,5 @@
 import {Config} from '../common/config/private/Config';
 import * as express from 'express';
-import {Request} from 'express';
 import * as cookieParser from 'cookie-parser';
 import * as _http from 'http';
 import {Server as HttpServer} from 'http';
@@ -15,15 +14,13 @@ import {Localizations} from './model/Localizations';
 import {CookieNames} from '../common/CookieNames';
 import {Router} from './routes/Router';
 import {PhotoProcessing} from './model/fileaccess/fileprocessing/PhotoProcessing';
-import * as _csrf from 'csurf';
 import {Event} from '../common/event/Event';
 import {QueryParams} from '../common/QueryParams';
 import {ConfigClassBuilder} from 'typeconfig/node';
 import {ConfigClassOptions} from 'typeconfig/src/decorators/class/IConfigClass';
 import {ServerConfig} from '../common/config/private/PrivateConfig';
-import {unless} from 'express-unless';
 
-// eslint-disable-next-line @typescript-eslint/no-var-requires
+// eslint-disable-next-line @typescript-eslint/no-require-imports
 const session = require('cookie-session');
 
 declare const process: NodeJS.Process;
@@ -100,29 +97,13 @@ export class Server {
     // for parsing application/json
     this.app.use(express.json());
     this.app.use(cookieParser());
-    const csuf: any = _csrf();
-    csuf.unless = unless;
-    this.app.use(
-      csuf.unless((req: Request) => {
-        return (
-          Config.Users.authenticationRequired === false ||
-          [Config.Server.apiPath + '/user/login', Config.Server.apiPath + '/user/logout', Config.Server.apiPath + '/share/login'].indexOf(
-            req.originalUrl
-          ) !== -1 ||
-          (Config.Sharing.enabled === true &&
-            !!req.query[QueryParams.gallery.sharingKey_query])
-        );
-      })
-    );
 
     // enable token generation but do not check it
     this.app.post(
       [Config.Server.apiPath + '/user/login', Config.Server.apiPath + '/share/login'],
-      _csrf({ignoreMethods: ['POST']})
     );
     this.app.get(
       [Config.Server.apiPath + '/user/me', Config.Server.apiPath + '/share/:' + QueryParams.gallery.sharingKey_params],
-      _csrf({ignoreMethods: ['GET']})
     );
 
     PhotoProcessing.init();
@@ -135,6 +116,11 @@ export class Server {
 
     // Get PORT from environment and store in Express.
     this.app.set('port', Config.Server.port);
+
+    // Set express 'trust proxy' setting to extract Remote Client IP
+    // from optional reverse proxies trusted headers
+    // See https://expressjs.com/en/guide/behind-proxies.html
+    this.app.set('trust proxy', Server.getAppTrustProxyConfig());
 
     // Create HTTP server.
     this.server = _http.createServer(this.app);
@@ -156,17 +142,24 @@ export class Server {
     }
   }
 
-  private SIGTERM = () =>{
+  private SIGTERM = () => {
     Logger.info(LOG_TAG, 'SIGTERM signal received');
     this.server.close(() => {
       process.exit(0);
     });
-  }
+  };
 
   /**
+   *
    * Event listener for HTTP server "error" event.
    */
-  private onError = (error: any) => {
+  private onError = (error: {
+    errno?: number,
+    code?: string,
+    path?: string,
+    syscall?: string,
+    stack?: string
+  }) => {
     if (error.syscall !== 'listen') {
       Logger.error(LOG_TAG, 'Server error', error);
       throw error;
@@ -207,9 +200,30 @@ export class Server {
     Logger.info(LOG_TAG, 'Closed http server');
   };
 
+  private static getAppTrustProxyConfig(): boolean | string | number {
+    const trustProxyValue = Config.Server.trustProxy;
+
+    switch (trustProxyValue) {
+      case "true":
+        return true;
+        break;
+
+      case "false":
+        return false;
+        break;
+
+      default:
+        if (/^\d+$/.test(trustProxyValue)) {
+          return Number(trustProxyValue);
+        }
+
+        return trustProxyValue;
+    }
+  }
+
   public Stop(): Promise<void> {
     return new Promise((resolve, reject) => {
-      if(!this.server.listening){
+      if (!this.server.listening) {
         return resolve();
       }
       this.server.close((err) => {

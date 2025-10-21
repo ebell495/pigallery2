@@ -51,12 +51,12 @@
 }
 
 
-.keywords a, a.dir-link {
+.clickable a, a.dir-link {
   --bs-text-opacity: 1;
   color: rgba(var(--bs-body-color-rgb), var(--bs-text-opacity)) !important;
 }
 
-.keywords a:hover, a.dir-link:hover {
+.clickable a:hover{
   text-decoration: underline;
 }
 

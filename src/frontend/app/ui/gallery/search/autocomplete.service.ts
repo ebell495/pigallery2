@@ -144,7 +144,7 @@ export class AutoCompleteService {
           acParams[QueryParams.gallery.search.type] = type;
         }
         this.networkService
-            .getJson<IAutoCompleteItem[]>('/autocomplete/' + text, acParams)
+            .getJson<IAutoCompleteItem[]>('/autocomplete/' + encodeURIComponent(text), acParams)
             .then((ret) => {
               this.galleryCacheService.setAutoComplete(text, type, ret);
               items.next(

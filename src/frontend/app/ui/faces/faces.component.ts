@@ -5,11 +5,21 @@ import {map} from 'rxjs/operators';
 import {PersonDTO} from '../../../../common/entities/PersonDTO';
 import {Observable} from 'rxjs';
 import {PiTitleService} from '../../model/pi-title.service';
+import { FrameComponent } from '../frame/frame.component';
+import { NgFor, NgIf, AsyncPipe } from '@angular/common';
+import { FaceComponent } from './face/face.component';
 
 @Component({
-  selector: 'app-faces',
-  templateUrl: './faces.component.html',
-  styleUrls: ['./faces.component.css'],
+    selector: 'app-faces',
+    templateUrl: './faces.component.html',
+    styleUrls: ['./faces.component.css'],
+    imports: [
+        FrameComponent,
+        NgFor,
+        FaceComponent,
+        NgIf,
+        AsyncPipe,
+    ]
 })
 export class FacesComponent implements OnInit {
   @ViewChild('container', {static: true}) container: ElementRef;

@@ -1,6 +1,4 @@
-interface HTMLCharDictionary {
-  [key: string]: string;
-}
+type HTMLCharDictionary = Record<string, string>;
 
 export const HTMLChar: HTMLCharDictionary = {
   "&quot;": "\"",

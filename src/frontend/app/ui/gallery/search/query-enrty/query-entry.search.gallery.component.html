@@ -111,15 +111,15 @@
           </div>
           <div class="col-md-8">
             <div class="input-group">
-              <label class="control-label me-2" [for]="'maxResolution_'+id">From</label>
-              <input [name]="'maxResolution_'+id"
-                     [id]="'maxResolution_'+id"
-                     title="From"
-                     placeholder="New York"
+              <label class="control-label me-2" [for]="'locationInput'+id" i18n>From</label>
+              <input [name]="'locationInput'+id"
+                     [id]="'locationInput'+id"
+                     title="Location or coordinates (lat, lng)"
+                     placeholder="New York or 40.7128, -74.0060"
                      i18n-title
                      class="form-control input-md rounded-2"
-                     [(ngModel)]="AsDistanceQuery.from.text"
-                     (ngModelChange)="onChange()"
+                     [ngModel]="locationInputText"
+                     (ngModelChange)="onLocationInputChange($event)"
                      type="text">
             </div>
           </div>

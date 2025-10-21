@@ -9,11 +9,13 @@ import {LatLngLiteral, Map, MapOptions, Marker, marker, tileLayer, TileLayer} fr
 import {ThemeService} from '../../../model/theme.service';
 import {Subscription} from 'rxjs';
 import {MarkerFactory} from './MarkerFactory';
+import { LeafletModule } from '@bluehalo/ngx-leaflet';
 
 @Component({
-  selector: 'app-gallery-map',
-  templateUrl: './map.gallery.component.html',
-  styleUrls: ['./map.gallery.component.css'],
+    selector: 'app-gallery-map',
+    templateUrl: './map.gallery.component.html',
+    styleUrls: ['./map.gallery.component.css'],
+    imports: [GalleryMapLightboxComponent, LeafletModule]
 })
 export class GalleryMapComponent implements OnChanges, IRenderable {
   @Input() photos: PhotoDTO[];
@@ -29,7 +31,7 @@ export class GalleryMapComponent implements OnChanges, IRenderable {
     zoomControl: false,
     dragging: false,
     keyboard: false,
-    tap: false,
+    tapHold: false,
     doubleClickZoom: false,
     boxZoom: false,
     zoom: 0,

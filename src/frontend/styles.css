@@ -54,8 +54,9 @@ This is mostly btn-light
 }
 
 ng-icon {
-  vertical-align: text-top;
-  font-size: 1.15em
+  font-size: 1.15em;
+  overflow: visible !important;
+  vertical-align: text-top !important;
 }
 
 ng-icon:not([strokeWidth]) svg {
@@ -94,3 +95,4 @@ This is mostly btn-dark + border fix
 }
 
 
+body {overflow-y: scroll;}

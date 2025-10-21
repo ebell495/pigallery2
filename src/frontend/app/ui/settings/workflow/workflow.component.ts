@@ -18,28 +18,54 @@ import {
   PeriodicJobTriggerConfig,
   ScheduledJobTriggerConfig
 } from '../../../../../common/config/private/PrivateConfig';
-import {ControlValueAccessor, NG_VALIDATORS, NG_VALUE_ACCESSOR, ValidationErrors, Validator} from '@angular/forms';
+import { ControlValueAccessor, NG_VALIDATORS, NG_VALUE_ACCESSOR, ValidationErrors, Validator, FormsModule } from '@angular/forms';
 import {SortByTypes, SortingMethod} from '../../../../../common/entities/SortingMethods';
 import {MediaPickDTO} from '../../../../../common/entities/MediaPickDTO';
 import {SearchQueryTypes, TextSearch} from '../../../../../common/entities/SearchQueryDTO';
+import { NgFor, NgIf, NgSwitch, NgSwitchCase, AsyncPipe, DatePipe } from '@angular/common';
+import { PopoverDirective } from 'ngx-bootstrap/popover';
+import { NgIconComponent } from '@ng-icons/core';
+import { JobButtonComponent } from './button/job-button.settings.component';
+import { TimeStampDatePickerComponent } from '../../utils/timestamp-datepicker/datepicker.component';
+import { TimeStampTimePickerComponent } from '../../utils/timestamp-timepicker/timepicker.component';
+import { GallerySearchFieldComponent } from '../../gallery/search/search-field/search-field.gallery.component';
+import { SortingMethodSettingsEntryComponent } from '../template/settings-entry/sorting-method/sorting-method.settings-entry.component';
+import { JobProgressComponent } from './progress/job-progress.settings.component';
 
 @Component({
-  selector: 'app-settings-workflow',
-  templateUrl: './workflow.component.html',
-  styleUrls: ['./workflow.component.css'],
-  providers: [
-    {
-      provide: NG_VALUE_ACCESSOR,
-      useExisting: forwardRef(() => WorkflowComponent),
-      multi: true,
-    },
-
-    {
-      provide: NG_VALIDATORS,
-      useExisting: forwardRef(() => WorkflowComponent),
-      multi: true,
-    },
-  ],
+    selector: 'app-settings-workflow',
+    templateUrl: './workflow.component.html',
+    styleUrls: ['./workflow.component.css'],
+    providers: [
+        {
+            provide: NG_VALUE_ACCESSOR,
+            useExisting: forwardRef(() => WorkflowComponent),
+            multi: true,
+        },
+        {
+            provide: NG_VALIDATORS,
+            useExisting: forwardRef(() => WorkflowComponent),
+            multi: true,
+        },
+    ],
+    imports: [
+        NgFor,
+        NgIf,
+        PopoverDirective,
+        NgIconComponent,
+        NgSwitch,
+        NgSwitchCase,
+        JobButtonComponent,
+        FormsModule,
+        TimeStampDatePickerComponent,
+        TimeStampTimePickerComponent,
+        GallerySearchFieldComponent,
+        SortingMethodSettingsEntryComponent,
+        JobProgressComponent,
+        ModalDirective,
+        AsyncPipe,
+        DatePipe,
+    ]
 })
 export class WorkflowComponent implements ControlValueAccessor, Validator, OnInit, OnDestroy {
 
@@ -95,7 +121,7 @@ export class WorkflowComponent implements ControlValueAccessor, Validator, OnIni
   }
 
   atTimeLocal(atTime: number): Date {
-    if (!atTime) {
+    if (isNaN(atTime)) {
       return null;
     }
     const d = new Date();

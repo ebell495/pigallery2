@@ -8,11 +8,12 @@ import {ContentService} from '../content.service';
 import {GallerySortingService} from '../navigator/sorting.service';
 import {QueryService} from '../../../model/query.service';
 import {BehaviorSubject, of} from 'rxjs';
-import {HttpClientTestingModule} from '@angular/common/http/testing';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import {PhotoDTO} from '../../../../../common/entities/PhotoDTO';
 import {GridMedia} from './GridMedia';
 import {GalleryNavigatorService} from '../navigator/navigator.service';
 import {GridSizes} from '../../../../../common/entities/GridSizes';
+import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
 
 class MockQueryService {
 }
@@ -36,24 +37,26 @@ describe('GalleryGridComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [HttpClientTestingModule],
-      declarations: [GalleryGridComponent],
-      providers: [
+    imports: [GalleryGridComponent],
+    providers: [
         ChangeDetectorRef, Router,
-        {provide: ContentService, useClass: MockContentService},
-        {provide: QueryService, useClass: MockQueryService},
-        {provide: OverlayService, useClass: MockOverlayService},
-        {provide: GallerySortingService, useClass: MockGallerySortingService},
-        {provide: GalleryNavigatorService, useClass: MockGalleryNavigatorService},
-        {provide: OverlayService, useClass: MockOverlayService},
+        { provide: ContentService, useClass: MockContentService },
+        { provide: QueryService, useClass: MockQueryService },
+        { provide: OverlayService, useClass: MockOverlayService },
+        { provide: GallerySortingService, useClass: MockGallerySortingService },
+        { provide: GalleryNavigatorService, useClass: MockGalleryNavigatorService },
+        { provide: OverlayService, useClass: MockOverlayService },
         {
-          provide: ActivatedRoute,
-          useValue: {
-            queryParams: of([{id: 1}]),
-            params: of([{id: 1}]),
-          },
-        }]
-    })
+            provide: ActivatedRoute,
+            useValue: {
+                queryParams: of([{ id: 1 }]),
+                params: of([{ id: 1 }]),
+            },
+        },
+        provideHttpClient(withInterceptorsFromDi()),
+        provideHttpClientTesting()
+    ]
+})
       .compileComponents();
 
     fixture = TestBed.createComponent(GalleryGridComponent);

@@ -9,6 +9,7 @@
   margin-left: 5px;
   border-left: 1px solid #6c757d;
   display: inline-block;
+  vertical-align: middle;
 }
 
 
@@ -41,6 +42,7 @@ app-gallery-filter {
 
 .btn-navigator {
   border: none;
+  line-height: 0;
 }
 
 .sorting-grouping-item {

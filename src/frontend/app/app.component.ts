@@ -7,11 +7,13 @@ import 'hammerjs';
 import {Subscription} from 'rxjs';
 import {NavigationService} from './model/navigation.service';
 import {ThemeService} from './model/theme.service';
+import { RouterOutlet } from '@angular/router';
 
 @Component({
-  selector: 'app-pi-gallery2',
-  template: `
+    selector: 'app-pi-gallery2',
+    template: `
     <router-outlet></router-outlet>`,
+    imports: [RouterOutlet]
 })
 export class AppComponent implements OnInit, OnDestroy {
   private subscription: Subscription = null;

@@ -6,11 +6,29 @@ import {SearchQueryTypes, TextSearch,} from '../../../../common/entities/SearchQ
 import {UserRoles} from '../../../../common/entities/UserDTO';
 import {AuthenticationService} from '../../model/network/authentication.service';
 import {PiTitleService} from '../../model/pi-title.service';
+import { FrameComponent } from '../frame/frame.component';
+import { NgFor, NgIf, AsyncPipe } from '@angular/common';
+import { AlbumComponent } from './album/album.component';
+import { NgIconComponent } from '@ng-icons/core';
+import { FormsModule } from '@angular/forms';
+import { GallerySearchQueryBuilderComponent } from '../gallery/search/query-builder/query-bulder.gallery.component';
+import { SavedSearchPopupComponent } from './saved-search-popup/saved-search-popup.component';
 
 @Component({
-  selector: 'app-albums',
-  templateUrl: './albums.component.html',
-  styleUrls: ['./albums.component.css'],
+    selector: 'app-albums',
+    templateUrl: './albums.component.html',
+    styleUrls: ['./albums.component.css'],
+    imports: [
+        FrameComponent,
+        NgFor,
+        AlbumComponent,
+        NgIf,
+        NgIconComponent,
+        FormsModule,
+        GallerySearchQueryBuilderComponent,
+        SavedSearchPopupComponent,
+        AsyncPipe,
+    ]
 })
 export class AlbumsComponent implements OnInit {
   @ViewChild('container', {static: true}) container: ElementRef;

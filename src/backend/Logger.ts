@@ -11,6 +11,7 @@ if (forcedDebug === true) {
   );
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type LoggerArgs = (string | number | (() => string) | Record<any, unknown> | Error);
 export type LoggerFunction = (...args: LoggerArgs[]) => void;
 

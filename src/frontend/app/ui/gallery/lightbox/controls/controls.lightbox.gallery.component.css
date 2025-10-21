@@ -91,7 +91,7 @@
   line-height: 0;
 }
 .controls-top ng-icon {
-  vertical-align: middle;
+  vertical-align: middle !important;
 }
 
 .controls-top ng-icon ::ng-deep svg {

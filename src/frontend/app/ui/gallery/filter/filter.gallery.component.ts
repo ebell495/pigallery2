@@ -1,12 +1,24 @@
 import {Component, OnDestroy, OnInit} from '@angular/core';
 import {RouterLink} from '@angular/router';
 import {FilterOption, FilterService, SelectedFilter} from './filter.service';
+import { NgIf, NgFor, NgClass, DatePipe } from '@angular/common';
+import { PopoverDirective } from 'ngx-bootstrap/popover';
+import { NgIconComponent } from '@ng-icons/core';
+import { FormsModule } from '@angular/forms';
 
 @Component({
-  selector: 'app-gallery-filter',
-  styleUrls: ['./filter.gallery.component.css'],
-  templateUrl: './filter.gallery.component.html',
-  providers: [RouterLink],
+    selector: 'app-gallery-filter',
+    styleUrls: ['./filter.gallery.component.css'],
+    templateUrl: './filter.gallery.component.html',
+    imports: [
+        NgIf,
+        NgFor,
+        PopoverDirective,
+        NgIconComponent,
+        FormsModule,
+        NgClass,
+        DatePipe,
+    ]
 })
 export class GalleryFilterComponent implements OnInit, OnDestroy {
   public readonly unknownText;

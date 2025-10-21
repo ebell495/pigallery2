@@ -12,25 +12,39 @@ import {AutoCompleteService} from '../../../../gallery/search/autocomplete.servi
 import {RouterLink} from '@angular/router';
 import {forwardRef} from '@angular/core';
 import {Utils} from '../../../../../../../common/Utils';
+import { BsDropdownDirective, BsDropdownToggleDirective, BsDropdownMenuDirective } from 'ngx-bootstrap/dropdown';
+import { NgIf, NgFor } from '@angular/common';
+import { NgIconComponent } from '@ng-icons/core';
+import { SortingMethodIconComponent } from '../../../../utils/sorting-method-icon/sorting-method-icon.component';
+import { StringifySortingMethod } from '../../../../../pipes/StringifySortingMethod';
 
 @Component({
-  selector: 'app-settings-entry-sorting-method',
-  templateUrl: './sorting-method.settings-entry.component.html',
-  styleUrls: ['./sorting-method.settings-entry.component.css'],
-  providers: [
-    AutoCompleteService,
-    RouterLink,
-    {
-      provide: NG_VALUE_ACCESSOR,
-      useExisting: forwardRef(() => SortingMethodSettingsEntryComponent),
-      multi: true,
-    },
-    {
-      provide: NG_VALIDATORS,
-      useExisting: forwardRef(() => SortingMethodSettingsEntryComponent),
-      multi: true,
-    },
-  ],
+    selector: 'app-settings-entry-sorting-method',
+    templateUrl: './sorting-method.settings-entry.component.html',
+    styleUrls: ['./sorting-method.settings-entry.component.css'],
+    providers: [
+        AutoCompleteService,
+        {
+            provide: NG_VALUE_ACCESSOR,
+            useExisting: forwardRef(() => SortingMethodSettingsEntryComponent),
+            multi: true,
+        },
+        {
+            provide: NG_VALIDATORS,
+            useExisting: forwardRef(() => SortingMethodSettingsEntryComponent),
+            multi: true,
+        },
+    ],
+    imports: [
+        BsDropdownDirective,
+        BsDropdownToggleDirective,
+        NgIf,
+        NgIconComponent,
+        SortingMethodIconComponent,
+        BsDropdownMenuDirective,
+        NgFor,
+        StringifySortingMethod,
+    ]
 })
 export class SortingMethodSettingsEntryComponent
     implements ControlValueAccessor, Validator, OnInit {

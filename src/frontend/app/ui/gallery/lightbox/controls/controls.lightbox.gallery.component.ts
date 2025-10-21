@@ -13,14 +13,28 @@ import {LightboxService} from '../lightbox.service';
 import {GalleryCacheService} from '../../cache.gallery.service';
 import {Utils} from '../../../../../../common/Utils';
 import {FileSizePipe} from '../../../../pipes/FileSizePipe';
-import {DatePipe} from '@angular/common';
+import { DatePipe, NgIf, NgFor } from '@angular/common';
 import {LightBoxTitleTexts} from '../../../../../../common/config/public/ClientConfig';
+import { NgIconComponent } from '@ng-icons/core';
+import { BsDropdownDirective, BsDropdownToggleDirective, BsDropdownMenuDirective } from 'ngx-bootstrap/dropdown';
+import { FormsModule } from '@angular/forms';
+import { RouterLink } from '@angular/router';
 
 
 @Component({
-  selector: 'app-lightbox-controls',
-  styleUrls: ['./controls.lightbox.gallery.component.css', './inputrange.css'],
-  templateUrl: './controls.lightbox.gallery.component.html',
+    selector: 'app-lightbox-controls',
+    styleUrls: ['./controls.lightbox.gallery.component.css', './inputrange.css'],
+    templateUrl: './controls.lightbox.gallery.component.html',
+    imports: [
+        NgIf,
+        NgIconComponent,
+        BsDropdownDirective,
+        BsDropdownToggleDirective,
+        BsDropdownMenuDirective,
+        FormsModule,
+        NgFor,
+        RouterLink,
+    ]
 })
 export class ControlsLightboxComponent implements OnDestroy, OnInit, OnChanges {
   readonly MAX_ZOOM = 10;
@@ -281,6 +295,10 @@ export class ControlsLightboxComponent implements OnDestroy, OnInit, OnChanges {
   }
 
   private showNextMedia = () => {
+    if(!this.navigation.hasNext){
+      this.pauseClicked();
+      return;
+    }
     if (this.mediaElement.imageLoadFinished.this === false ||
       this.mediaElement.imageLoadFinished.next === false) {
       return;

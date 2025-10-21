@@ -112,8 +112,106 @@ describe('SearchQueryParser', () => {
       check({type: SearchQueryTypes.max_resolution, value: 5, negate: true} as MaxResolutionSearch);
     });
     it('Distance search', () => {
+      // Test location-based distance search
       check({type: SearchQueryTypes.distance, distance: 10, from: {text: 'New York'}} as DistanceSearch);
       check({type: SearchQueryTypes.distance, distance: 10, from: {text: 'New York'}, negate: true} as DistanceSearch);
+
+      // Test coordinate-based distance search
+      check({
+        type: SearchQueryTypes.distance,
+        distance: 5,
+        from: {
+          GPSData: {
+            latitude: 40.712776,
+            longitude: -74.005974
+          }
+        }
+      } as DistanceSearch);
+
+      // Test coordinate-based distance search with negation
+      check({
+        type: SearchQueryTypes.distance,
+        distance: 5,
+        from: {
+          GPSData: {
+            latitude: 40.712776,
+            longitude: -74.005974
+          }
+        },
+        negate: true
+      } as DistanceSearch);
+
+      // Test parsing specific coordinate formats
+      const parser = new SearchQueryParser(defaultQueryKeywords);
+
+      // Test basic coordinate format
+      expect(parser.parse('5-km-from:(40.712776, -74.005974)')).to.deep.equals({
+        type: SearchQueryTypes.distance,
+        distance: 5,
+        from: {
+          GPSData: {
+            latitude: 40.712776,
+            longitude: -74.005974
+          }
+        }
+      } as DistanceSearch);
+
+      // Test coordinate format with extra spaces
+      expect(parser.parse('5-km-from:(  40.712776  ,  -74.005974  )')).to.deep.equals({
+        type: SearchQueryTypes.distance,
+        distance: 5,
+        from: {
+          GPSData: {
+            latitude: 40.712776,
+            longitude: -74.005974
+          }
+        }
+      } as DistanceSearch);
+
+      // Test coordinates with different decimal places
+      expect(parser.parse('5-km-from:(40.7, -74.1)')).to.deep.equals({
+        type: SearchQueryTypes.distance,
+        distance: 5,
+        from: {
+          GPSData: {
+            latitude: 40.7,
+            longitude: -74.1
+          }
+        }
+      } as DistanceSearch);
+
+      // Test negated coordinate search
+      expect(parser.parse('5-km-from!:(40.712776, -74.005974)')).to.deep.equals({
+        type: SearchQueryTypes.distance,
+        distance: 5,
+        from: {
+          GPSData: {
+            latitude: 40.712776,
+            longitude: -74.005974
+          }
+        },
+        negate: true
+      } as DistanceSearch);
+
+      // Test stringification of coordinates
+      const query: DistanceSearch = {
+        type: SearchQueryTypes.distance,
+        distance: 5,
+        from: {
+          GPSData: {
+            latitude: 40.712776,
+            longitude: -74.005974
+          }
+        }
+      };
+      expect(parser.stringify(query)).to.equals('5-km-from:(40.712776, -74.005974)');
+
+      // Test stringification of negated coordinates
+      const negatedQuery: DistanceSearch = {
+        ...query,
+        negate: true
+      };
+      expect(parser.stringify(negatedQuery)).to.equals('5-km-from!:(40.712776, -74.005974)');
     });
     it('OrientationSearch search', () => {
       check({type: SearchQueryTypes.orientation, landscape: true} as OrientationSearch);

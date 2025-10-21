@@ -5,7 +5,7 @@ import {Utils} from './Utils';
  * This contains the action of the supported list of *.pg2conf files.
  * These files are passed down to the client as metaFiles (like photos and directories)
  */
-export const PG2ConfMap: { sorting: { [key: string]: SortingMethod } } = {
+export const PG2ConfMap: { sorting: Record<string, SortingMethod> } = {
   sorting: {}
 };
 
@@ -28,7 +28,7 @@ export enum ServerSidePG2ConfAction {
   SAVED_SEARCH = 1,
 }
 
-export const ServerPG2ConfMap: { [key: string]: ServerSidePG2ConfAction } = {
+export const ServerPG2ConfMap: Record<string, ServerSidePG2ConfAction> = {
   '.saved_searches.pg2conf': ServerSidePG2ConfAction.SAVED_SEARCH,
 };
 

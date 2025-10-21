@@ -150,6 +150,7 @@ export class SearchQueryParser {
       if (parts && parts.length === 3) {
         timestamp = Date.UTC(parts[0], parts[1] - 1, parts[2], 0, 0, 0, 0); // Note: months are 0-based
       }
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (e) {
       // ignoring errors
     }
@@ -345,13 +346,38 @@ export class SearchQueryParser {
       ) {
         from = from.slice(1, from.length - 1);
       }
+
+      // Check if the from part matches coordinate pattern (number, number)
+      const coordMatch = from.match(/^\s*(-?\d+\.?\d*)\s*,\s*(-?\d+\.?\d*)\s*$/);
+      if (coordMatch) {
+        // It's a coordinate pair
+        const latitude = parseFloat(coordMatch[1]);
+        const longitude = parseFloat(coordMatch[2]);
+        return {
+          type: SearchQueryTypes.distance,
+          distance: intFromRegexp(str),
+          from: {
+            GPSData: {
+              latitude,
+              longitude
+            }
+          },
+          // only add negate if the value is true
+          ...(new RegExp('^\\d*-' + this.keywords.kmFrom + '!:').test(str) && {
+            negate: true,
+          }),
+        } as DistanceSearch;
+      }
+
+      // If not coordinates, treat as location text
       return {
         type: SearchQueryTypes.distance,
         distance: intFromRegexp(str),
         from: {text: from},
+        // only add negate if the value is true
         ...(new RegExp('^\\d*-' + this.keywords.kmFrom + '!:').test(str) && {
           negate: true,
-        }), // only add if the value is true
+        }),
       } as DistanceSearch;
     }
 
@@ -407,11 +433,11 @@ export class SearchQueryParser {
 
     // parse text search
     const tmp = TextSearchQueryTypes.map((type) => ({
-      key: (this.keywords as any)[SearchQueryTypes[type]] + ':',
+      key: (this.keywords as never)[SearchQueryTypes[type]] + ':',
       queryTemplate: {type, text: ''} as TextSearch,
     })).concat(
         TextSearchQueryTypes.map((type) => ({
-          key: (this.keywords as any)[SearchQueryTypes[type]] + '!:',
+          key: (this.keywords as never)[SearchQueryTypes[type]] + '!:',
           queryTemplate: {type, text: '', negate: true} as TextSearch,
         }))
     );
@@ -578,25 +604,28 @@ export class SearchQueryParser {
                 ? ''
                 : (query as RangeSearch).value)
         );
-      case SearchQueryTypes.distance:
-        if ((query as DistanceSearch).from.text.indexOf(' ') !== -1) {
-          return (
-              (query as DistanceSearch).distance +
-              '-' +
-              this.keywords.kmFrom +
-              colon +
-              '(' +
-              (query as DistanceSearch).from.text +
-              ')'
-          );
+      case SearchQueryTypes.distance: {
+        const distanceQuery = query as DistanceSearch;
+        const text = distanceQuery.from.text;
+        const coords = distanceQuery.from.GPSData;
+
+        let locationStr = '';
+        if (text) {
+          // If we have location text, use that
+          locationStr = text;
+        } else if (coords && coords.latitude != null && coords.longitude != null) {
+          // If we only have coordinates, use them
+          locationStr = `${coords.latitude.toFixed(6)}, ${coords.longitude.toFixed(6)}`;
         }
-        return (
-            (query as DistanceSearch).distance +
-            '-' +
-            this.keywords.kmFrom +
-            colon +
-            (query as DistanceSearch).from.text
-        );
+
+        // Add brackets if the location string contains spaces
+        if (locationStr.indexOf(' ') !== -1) {
+          locationStr = `(${locationStr})`;
+        }
+
+        return `${distanceQuery.distance}-${this.keywords.kmFrom}${colon}${locationStr}`;
+      }
+
       case SearchQueryTypes.orientation:
         return (
             this.keywords.orientation +
@@ -651,7 +680,7 @@ export class SearchQueryParser {
           );
         } else {
           return (
-              (this.keywords as any)[SearchQueryTypes[query.type]] +
+              (this.keywords as never)[SearchQueryTypes[query.type]] +
               colon +
               SearchQueryParser.stringifyText(
                   (query as TextSearch).text,
@@ -670,7 +699,7 @@ export class SearchQueryParser {
           return '';
         }
         return (
-            (this.keywords as any)[SearchQueryTypes[query.type]] +
+            (this.keywords as never)[SearchQueryTypes[query.type]] +
             colon +
             SearchQueryParser.stringifyText(
                 (query as TextSearch).text,

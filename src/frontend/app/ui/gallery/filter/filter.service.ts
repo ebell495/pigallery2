@@ -313,9 +313,8 @@ export class FilterService {
               const valueMap: { [key: string]: { name: string | number, count: number, selected: boolean } } = {};
               f.options.forEach((o) => {
                 valueMap[o.name] = o;
-                o.count = 0; // reset count so unknown option can be removed at the end
+                o.count = 0; // reset count so unknown options can be removed at the end
               });
-
               if (f.filter.isArrayValue) {
                 c.media.forEach((m) => {
                   (f.filter.mapFn(m as PhotoDTO) as string[])?.forEach((v) => {
@@ -357,7 +356,10 @@ export class FilterService {
                     if (!mapped) {
                       return true;
                     }
-                    return mapped.indexOf(opt.name) === -1;
+                    // Keep photos that have at least one of the selected values
+                    return mapped.some(value =>
+                      f.options.find(opt => opt.name === value && opt.selected)
+                    );
                   });
                 } else {
                   c.media = c.media.filter(

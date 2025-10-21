@@ -8,7 +8,7 @@ import {MediaRendererInput, PhotoWorker, SvgRendererInput, ThumbnailSourceType,}
 import {ITaskExecuter, TaskExecuter} from '../TaskExecuter';
 import {FaceRegion, PhotoDTO} from '../../../../common/entities/PhotoDTO';
 import {SupportedFormats} from '../../../../common/SupportedFormats';
-import {PersonEntry} from '../../database/enitites/PersonEntry';
+import {PersonEntry} from '../../database/enitites/person/PersonEntry';
 import {SVGIconConfig} from '../../../../common/config/public/ClientConfig';
 
 export class PhotoProcessing {
@@ -38,7 +38,7 @@ export class PhotoProcessing {
     person: PersonEntry
   ): Promise<string> {
     // load parameters
-    const photo: PhotoDTO = person.sampleRegion.media;
+    const photo: PhotoDTO = person.cache.sampleRegion.media;
     const mediaPath = path.join(
       ProjectPath.ImageFolder,
       photo.directory.path,
@@ -46,7 +46,7 @@ export class PhotoProcessing {
       photo.name
     );
     const size: number = Config.Media.Photo.personThumbnailSize;
-    const faceRegion = person.sampleRegion.media.metadata.faces.find(f => f.name === person.name);
+    const faceRegion = person.cache.sampleRegion.media.metadata.faces.find(f => f.name === person.name);
     // generate thumbnail path
     const thPath = PhotoProcessing.generatePersonThumbnailPath(
       mediaPath,
@@ -182,8 +182,8 @@ export class PhotoProcessing {
       return false;
     }
 
-    const qualityStr =convertedPath.substring(nextIndex,
-      nextIndex+convertedPath.substring(nextIndex).search(/[A-Za-z]/)); // end of quality string
+    const qualityStr = convertedPath.substring(nextIndex,
+      nextIndex + convertedPath.substring(nextIndex).search(/[A-Za-z]/)); // end of quality string
 
     const quality = parseInt(qualityStr, 10);
 
@@ -216,12 +216,12 @@ export class PhotoProcessing {
       ) != 'cs') {
         return false;
       }
-      nextIndex+=2;
+      nextIndex += 2;
     }
 
-    if(convertedPath.substring(
+    if (convertedPath.substring(
       nextIndex
-    ).toLowerCase() !== path.extname(convertedPath)){
+    ).toLowerCase() !== path.extname(convertedPath)) {
       return false;
     }
 
@@ -281,6 +281,8 @@ export class PhotoProcessing {
       useLanczos3: Config.Media.Photo.useLanczos3,
       quality: Config.Media.Photo.quality,
       smartSubsample: Config.Media.Photo.smartSubsample,
+      sharpOptions: Config.Media.Photo.sharpOptions,
+      animate: Config.Media.Photo.animateGif
     } as MediaRendererInput;
 
     const outDir = path.dirname(input.outPath);
@@ -301,10 +303,23 @@ export class PhotoProcessing {
     color = '#000'
   ): Promise<string> {
 
+    // Generate hash from SVG content and color to create unique filename
+    const contentHash = crypto
+      .createHash('md5')
+      .update(JSON.stringify(svgIcon) + color)
+      .digest('hex')
+      .substring(0, 8);
+
+    // Update outPath to include hash
+    const ext = path.extname(outPath);
+    const baseName = path.basename(outPath, ext);
+    const dir = path.dirname(outPath);
+    const hashedOutPath = path.join(dir, `${baseName}_${contentHash}${ext}`);
+
     // check if file already exist
     try {
-      await fsp.access(outPath, fsConstants.R_OK);
-      return outPath;
+      await fsp.access(hashedOutPath, fsConstants.R_OK);
+      return hashedOutPath;
     } catch (e) {
       // ignoring errors
     }
@@ -316,7 +331,7 @@ export class PhotoProcessing {
       svgString: `<svg fill="${color}" width="${size}" height="${size}" xmlns="http://www.w3.org/2000/svg"
 viewBox="${svgIcon.viewBox || '0 0 512 512'}">d="${svgIcon.items}</svg>`,
       size: size,
-      outPath,
+      outPath: hashedOutPath,
       makeSquare: false,
       animate: false,
       useLanczos3: Config.Media.Photo.useLanczos3,
@@ -328,7 +343,7 @@ viewBox="${svgIcon.viewBox || '0 0 512 512'}">d="${svgIcon.items}</svg>`,
 
     await fsp.mkdir(outDir, {recursive: true});
     await this.taskQue.execute(input);
-    return outPath;
+    return hashedOutPath;
   }
 
 }

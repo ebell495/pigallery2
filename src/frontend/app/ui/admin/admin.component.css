@@ -18,3 +18,7 @@
 nav.sticky-top {
   transition: top 0.3s ease-in-out;
 }
+
+.btn-settings-nav{
+  line-height: initial;
+}

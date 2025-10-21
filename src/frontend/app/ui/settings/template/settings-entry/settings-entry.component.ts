@@ -1,5 +1,5 @@
 import {Component, forwardRef, Input, OnChanges, TemplateRef} from '@angular/core';
-import {ControlValueAccessor, NG_VALIDATORS, NG_VALUE_ACCESSOR, ValidationErrors, Validator,} from '@angular/forms';
+import { ControlValueAccessor, NG_VALIDATORS, NG_VALUE_ACCESSOR, ValidationErrors, Validator, FormsModule } from '@angular/forms';
 import {Utils} from '../../../../../../common/Utils';
 import {propertyTypes} from 'typeconfig/common';
 import {SearchQueryParserService} from '../../../gallery/search/search-query-parser.service';
@@ -20,6 +20,13 @@ import {BsModalService} from 'ngx-bootstrap/modal';
 import {CustomSettingsEntries} from '../CustomSettingsEntries';
 import {GroupByTypes, SortByTypes} from '../../../../../../common/entities/SortingMethods';
 import { ServerExtensionsEntryConfig } from '../../../../../../common/config/private/subconfigs/ServerExtensionsConfig';
+import { NgIf, NgSwitch, NgSwitchCase, NgFor, NgClass } from '@angular/common';
+import { GallerySearchFieldComponent } from '../../../gallery/search/search-field/search-field.gallery.component';
+import { NgIconComponent } from '@ng-icons/core';
+import { SortingMethodSettingsEntryComponent } from './sorting-method/sorting-method.settings-entry.component';
+import { WorkflowComponent } from '../../workflow/workflow.component';
+import { PopoverDirective } from 'ngx-bootstrap/popover';
+import { SafeHtmlPipe } from '../../../../pipes/SafeHTMLPipe';
 
 interface IState {
   shouldHide(): boolean;
@@ -42,22 +49,35 @@ interface IState {
 }
 
 @Component({
-  selector: 'app-settings-entry',
-  templateUrl: './settings-entry.component.html',
-  styleUrls: ['./settings-entry.settings.component.css'],
-  providers: [
-    {
-      provide: NG_VALUE_ACCESSOR,
-      useExisting: forwardRef(() => SettingsEntryComponent),
-      multi: true,
-    },
-
-    {
-      provide: NG_VALIDATORS,
-      useExisting: forwardRef(() => SettingsEntryComponent),
-      multi: true,
-    },
-  ],
+    selector: 'app-settings-entry',
+    templateUrl: './settings-entry.component.html',
+    styleUrls: ['./settings-entry.settings.component.css'],
+    providers: [
+        {
+            provide: NG_VALUE_ACCESSOR,
+            useExisting: forwardRef(() => SettingsEntryComponent),
+            multi: true,
+        },
+        {
+            provide: NG_VALIDATORS,
+            useExisting: forwardRef(() => SettingsEntryComponent),
+            multi: true,
+        },
+    ],
+    imports: [
+        NgIf,
+        NgSwitch,
+        NgSwitchCase,
+        GallerySearchFieldComponent,
+        FormsModule,
+        NgFor,
+        NgIconComponent,
+        SortingMethodSettingsEntryComponent,
+        WorkflowComponent,
+        NgClass,
+        PopoverDirective,
+        SafeHtmlPipe,
+    ]
 })
 export class SettingsEntryComponent
     implements ControlValueAccessor, Validator, OnChanges {
