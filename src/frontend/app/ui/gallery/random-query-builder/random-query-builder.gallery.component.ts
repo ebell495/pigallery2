@@ -1,5 +1,5 @@
 import {Component, OnDestroy, OnInit, TemplateRef} from '@angular/core';
-import {ContentWrapper} from '../../../../../common/entities/ConentWrapper';
+import {ContentWrapper} from '../../../../../common/entities/ContentWrapper';
 import {Config} from '../../../../../common/config/public/Config';
 import {NotificationService} from '../../../model/notification.service';
 import {BsModalService} from 'ngx-bootstrap/modal';
@@ -11,11 +11,21 @@ import {ActivatedRoute, Params} from '@angular/router';
 import {QueryParams} from '../../../../../common/QueryParams';
 import {SearchQueryParserService} from '../search/search-query-parser.service';
 import {ContentLoaderService} from '../contentLoader.service';
+import { NgIconComponent } from '@ng-icons/core';
+import { FormsModule } from '@angular/forms';
+import { ClipboardModule } from 'ngx-clipboard';
+import { GallerySearchQueryBuilderComponent } from '../search/query-builder/query-bulder.gallery.component';
 
 @Component({
-  selector: 'app-gallery-random-query-builder',
-  templateUrl: './random-query-builder.gallery.component.html',
-  styleUrls: ['./random-query-builder.gallery.component.css'],
+    selector: 'app-gallery-random-query-builder',
+    templateUrl: './random-query-builder.gallery.component.html',
+    styleUrls: ['./random-query-builder.gallery.component.css'],
+    imports: [
+        NgIconComponent,
+        FormsModule,
+        ClipboardModule,
+        GallerySearchQueryBuilderComponent,
+    ]
 })
 export class RandomQueryBuilderGalleryComponent implements OnInit, OnDestroy {
   public searchQueryDTO: SearchQueryDTO = {
@@ -63,7 +73,7 @@ export class RandomQueryBuilderGalleryComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.contentSubscription = this.contentLoaderService.content.subscribe(
         (content: ContentWrapper) => {
-          this.enabled = !!content.directory;
+          this.enabled = !!content?.directory;
           if (!this.enabled) {
             return;
           }

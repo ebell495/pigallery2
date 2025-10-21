@@ -5,14 +5,16 @@ import {ScheduledJobsService} from '../../scheduled-jobs.service';
 import {NotificationService} from '../../../../model/notification.service';
 import {JobDTOUtils} from '../../../../../../common/entities/job/JobDTO';
 import {BackendtextService} from '../../../../model/backendtext.service';
-import {BsModalRef} from 'ngx-bootstrap/modal';
-import {BsModalService} from '../../../../../../../node_modules/ngx-bootstrap/modal';
+import {BsModalRef,BsModalService} from 'ngx-bootstrap/modal';
 import {ConfigStyle} from '../../settings.service';
+import { NgIf } from '@angular/common';
+import { NgIconComponent } from '@ng-icons/core';
 
 @Component({
-  selector: 'app-settings-job-button',
-  templateUrl: './job-button.settings.component.html',
-  styleUrls: ['./job-button.settings.component.css'],
+    selector: 'app-settings-job-button',
+    templateUrl: './job-button.settings.component.html',
+    styleUrls: ['./job-button.settings.component.css'],
+    imports: [NgIf, NgIconComponent]
 })
 export class JobButtonComponent {
   @Input() jobName: string;

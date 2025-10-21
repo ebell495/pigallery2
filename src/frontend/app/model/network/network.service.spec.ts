@@ -1,10 +1,11 @@
 import {getTestBed, inject, TestBed} from '@angular/core/testing';
-import {HttpClientTestingModule, HttpTestingController,} from '@angular/common/http/testing';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import {NetworkService} from './network.service';
 import {Message} from '../../../../common/entities/Message';
 import {LoadingBarService} from '@ngx-loading-bar/core';
 import {VersionService} from '../version.service';
 import {Config} from '../../../../common/config/public/Config';
+import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
 
 describe('NetworkService Success tests', () => {
   const testUrl = '/test/url';
@@ -16,9 +17,9 @@ describe('NetworkService Success tests', () => {
 
   beforeEach(() => {
     TestBed.configureTestingModule({
-      imports: [HttpClientTestingModule],
-      providers: [VersionService, LoadingBarService, NetworkService],
-    });
+    imports: [],
+    providers: [VersionService, LoadingBarService, NetworkService, provideHttpClient(withInterceptorsFromDi()), provideHttpClientTesting()]
+});
     injector = getTestBed();
     httpMock = TestBed.inject(HttpTestingController);
   });
@@ -133,9 +134,9 @@ describe('NetworkService Fail tests', () => {
 
   beforeEach(() => {
     TestBed.configureTestingModule({
-      imports: [HttpClientTestingModule],
-      providers: [VersionService, LoadingBarService, NetworkService],
-    });
+    imports: [],
+    providers: [VersionService, LoadingBarService, NetworkService, provideHttpClient(withInterceptorsFromDi()), provideHttpClientTesting()]
+});
     injector = getTestBed();
     httpMock = TestBed.inject(HttpTestingController);
   });

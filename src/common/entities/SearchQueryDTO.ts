@@ -174,7 +174,7 @@ export interface ORSearchQuery extends SearchQueryDTO, SearchListQuery {
 export interface SomeOfSearchQuery extends SearchQueryDTO, SearchListQuery {
   type: SearchQueryTypes.SOME_OF;
   list: NegatableSearchQuery[];
-  min?: number; // at least this amount of items
+  min?: number; // at least this number of items
 }
 
 export interface TextSearch extends NegatableSearchQuery {

@@ -25,9 +25,8 @@ import {
   ServerPhotoConfig,
   ServerVideoConfig,
 } from '../../../common/config/private/PrivateConfig';
-import {SearchQueryParser} from '../../../common/SearchQueryParser';
 import {SearchQueryTypes, TextSearch,} from '../../../common/entities/SearchQueryDTO';
-import {Utils} from '../../../common/Utils';
+import {SearchQueryUtils} from '../../../common/SearchQueryUtils';
 import {JobRepository} from '../jobs/JobRepository';
 import {ConfigClassBuilder} from '../../../../node_modules/typeconfig/node';
 import {Config} from '../../../common/config/private/Config';
@@ -285,26 +284,27 @@ export class ConfigDiagnostics {
 
   static async testAlbumCoverConfig(settings: ServerAlbumCoverConfig): Promise<void> {
     Logger.debug(LOG_TAG, 'Testing cover config');
-    const sp = new SearchQueryParser();
-    if (
-      !Utils.equalsFilter(
-        sp.parse(sp.stringify(settings.SearchQuery)),
-        settings.SearchQuery
-      )
-    ) {
-      throw new Error('SearchQuery is not valid. Got: ' + JSON.stringify(sp.parse(sp.stringify(settings.SearchQuery))));
-    }
+    SearchQueryUtils.validateSearchQuery(settings.SearchQuery, 'SearchQuery');
   }
 
   /**
    * Removes unsupported image formats.
-   * It is possible that some OS support one or the other image formats (like Mac os does with HEIC)
-   * , but others not.
-   * Those formats are added to the config, but dynamically removed.
+   * It is possible that some OS support one or the other image formats (like macOS does with HEIC),
+   * but others do not.
+   * Those formats are added to the config but dynamically removed.
    * @param config
    */
   static async removeUnsupportedPhotoExtensions(config: ClientPhotoConfig): Promise<void> {
     Logger.verbose(LOG_TAG, 'Checking for supported image formats');
+
+    const sharp = require('sharp');
+    let text =""
+    for( const f in sharp.format) {
+      text +=`${f}: {\n\tid:${JSON.stringify(sharp.format[f].id)},\n\tinput:${JSON.stringify(sharp.format[f].input)},\n\toutput:${JSON.stringify(sharp.format[f].output)}}\n`;
+    }
+    Logger.silly(LOG_TAG, 'Sharp supports:\n' +text);
+    Logger.silly(LOG_TAG, 'Sharp versions:' + JSON.stringify(sharp.versions));
+
     let removedSome = false;
     let i = config.supportedFormats.length;
     while (i--) {
@@ -313,10 +313,9 @@ export class ConfigDiagnostics {
       // Check if a test available for this image format.
       // if not probably because it is trivial
       if (!fs.existsSync(testImage)) {
-        Logger.silly(LOG_TAG, `No test for ${ext} image format. skipping.`);
+        Logger.debug(LOG_TAG, `❕ ${ext} image format has no test. skipping.`);
         continue;
       }
-      Logger.silly(LOG_TAG, `Testing ${ext} image formats.`);
       try {
         await PhotoWorker.renderFromImage({
             type: ThumbnailSourceType.Photo,
@@ -327,8 +326,10 @@ export class ConfigDiagnostics {
             smartSubsample: Config.Media.Photo.smartSubsample,
           } as MediaRendererInput, true
         );
+        Logger.debug(LOG_TAG, `✔️ ${ext} image formats tested successfully.`);
       } catch (e) {
-        Logger.verbose(LOG_TAG, 'The current OS does not support the following photo format:' + ext + ', removing it form config.');
+        Logger.verbose(e);
+        Logger.verbose(LOG_TAG, `❌ ${ext} image format tested failed, removing it form config.`);
         config.supportedFormats.splice(i, 1);
         removedSome = true;
       }

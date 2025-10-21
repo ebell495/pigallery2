@@ -293,6 +293,37 @@ export class ServerUserConfig extends ClientUserConfig {
     description: $localize`Creates these users in the DB during startup if they do not exist. If a user with this name exist, it won't be overwritten, even if the role is different.`,
   })
   enforcedUsers: UserConfig[] = [];
+
+
+  @ConfigProperty({
+    type: 'object',
+    tags: {
+      name: $localize`Media allow list`,
+      priority: ConfigPriority.advanced,
+      uiType: 'SearchQuery',
+      githubIssue: 1015
+    },
+    description: $localize`Setting a non empty search query here will make the app to only SHOW photos and videos that match the query. You can override this at every user separately.`,
+  })
+  allowQuery: SearchQueryDTO = {
+    type: SearchQueryTypes.any_text,
+    text: '',
+  } as TextSearch;
+
+  @ConfigProperty({
+    type: 'object',
+    tags: {
+      name: $localize`Media block list`,
+      priority: ConfigPriority.advanced,
+      uiType: 'SearchQuery',
+      githubIssue: 1015
+    },
+    description: $localize`Setting a non empty search query here will make the app to HIDE photos and videos that match the query. You can override this at every user separately.`,
+  })
+  blockQuery: SearchQueryDTO = {
+    type: SearchQueryTypes.any_text,
+    text: '',
+  } as TextSearch;
 }
 
 
@@ -327,6 +358,18 @@ export class ServerPhotoConfig extends ClientPhotoConfig {
     description: $localize`Use high quality chroma subsampling in webp. See: https://sharp.pixelplumbing.com/api-output#webp.`
   })
   smartSubsample = true;
+
+  @ConfigProperty({
+    type: 'object',
+    tags:
+      {
+        name: $localize`Sharp options`,
+        priority: ConfigPriority.underTheHood,
+        githubIssue: 980
+      },
+    description: $localize`Add any sharp options here. They will be added to sharp constructor as raw params. See: https://sharp.pixelplumbing.com/api-constructor/.`
+  })
+  sharpOptions = {test: 444};
 
   @ConfigProperty({
     type: 'float',
@@ -530,14 +573,35 @@ export class ServerLogConfig {
   logServerTiming: boolean = false;
 }
 
+/**
+ * This is a "Hack" for the typeconfig
+ * The config should contain all the fields that are settable,
+ * otherwise change detection won't work, and we can't save the config.
+ * WARN: Do not use this class directly, use the separate Trigger classes below
+ */
 @SubConfigClass({softReadonly: true})
-export class NeverJobTriggerConfig implements NeverJobTrigger {
+export class JobTriggerConfigBase{
+
+  @ConfigProperty({type: JobTriggerType})
+  readonly type: JobTriggerType = JobTriggerType.never;
+  @ConfigProperty({type: 'unsignedInt'})
+  time?: number | undefined; // data time
+  @ConfigProperty({type: 'unsignedInt', max: 7})
+  periodicity?: number | undefined = 7; // 0-6: week days 7 every day
+  @ConfigProperty({type: 'unsignedInt', max: 23 * 60 + 59})
+  atTime?: number | undefined = 0; // daytime
+  @ConfigProperty({type: 'string'})
+  afterScheduleName?: string | undefined; // runs after schedule
+}
+
+@SubConfigClass({softReadonly: true})
+export class NeverJobTriggerConfig extends JobTriggerConfigBase implements NeverJobTrigger {
   @ConfigProperty({type: JobTriggerType})
   readonly type = JobTriggerType.never;
 }
 
 @SubConfigClass({softReadonly: true})
-export class ScheduledJobTriggerConfig implements ScheduledJobTrigger {
+export class ScheduledJobTriggerConfig extends JobTriggerConfigBase implements ScheduledJobTrigger {
   @ConfigProperty({type: JobTriggerType})
   readonly type = JobTriggerType.scheduled;
 
@@ -546,23 +610,24 @@ export class ScheduledJobTriggerConfig implements ScheduledJobTrigger {
 }
 
 @SubConfigClass({softReadonly: true})
-export class PeriodicJobTriggerConfig implements PeriodicJobTrigger {
+export class PeriodicJobTriggerConfig extends JobTriggerConfigBase implements PeriodicJobTrigger {
   @ConfigProperty({type: JobTriggerType})
   readonly type = JobTriggerType.periodic;
   @ConfigProperty({type: 'unsignedInt', max: 7})
   periodicity: number | undefined = 7; // 0-6: week days 7 every day
   @ConfigProperty({type: 'unsignedInt', max: 23 * 60 + 59})
-  atTime: number | undefined = 0; // day time
+  atTime: number | undefined = 0; // daytime
 }
 
 @SubConfigClass({softReadonly: true})
-export class AfterJobTriggerConfig implements AfterJobTrigger {
+export class AfterJobTriggerConfig extends JobTriggerConfigBase implements AfterJobTrigger {
   @ConfigProperty({type: JobTriggerType})
   readonly type = JobTriggerType.after;
   @ConfigProperty()
   afterScheduleName: string | undefined; // runs after schedule
 
   constructor(afterScheduleName?: string) {
+    super();
     this.afterScheduleName = afterScheduleName;
   }
 }
@@ -578,7 +643,7 @@ export class JobScheduleConfig implements JobScheduleDTO {
   @ConfigProperty()
   allowParallelRun: boolean = false;
   @ConfigProperty({
-    type: NeverJobTriggerConfig,
+    type: JobTriggerConfigBase,
     typeBuilder: (v: JobTrigger) => {
       const type = typeof v.type === 'number' ? v.type : JobTriggerType[v.type];
       switch (type) {
@@ -874,19 +939,6 @@ export class ServerMediaConfig extends ClientMediaConfig {
   tempFolder: string = 'demo/tmp';
 
   @ConfigProperty({
-    type: 'unsignedInt',
-    tags: {
-      name: $localize`Metadata read buffer`,
-      priority: ConfigPriority.underTheHood,
-      uiResetNeeded: {db: true, server: true},
-      githubIssue: 398,
-      unit: 'bytes'
-    } as TAGS,
-    description: $localize`Only this many bites will be loaded when scanning photo/video for metadata. Increase this number if your photos shows up as square.`,
-  })
-  photoMetadataSize: number = 512 * 1024; // only this many bites will be loaded when scanning photo for metadata
-
-  @ConfigProperty({
     tags: {
       name: $localize`Video`,
       uiIcon: 'ionVideocamOutline',
@@ -932,6 +984,16 @@ export class ServerServiceConfig extends ClientServiceConfig {
     description: $localize`Users kept logged in for this long time.`,
   })
   sessionTimeout: number = 1000 * 60 * 60 * 24 * 7; // in ms
+
+  @ConfigProperty({
+    tags: {
+      name: $localize`Trust Proxy`,
+      priority: ConfigPriority.underTheHood,
+      githubIssue: 1014
+    },
+    description: $localize`Should the backend trust proxies to extract remote Client IP. See express docs, for valid values: https://expressjs.com/en/guide/behind-proxies.html`,
+  })
+  trustProxy: string = 'false';
 
   @ConfigProperty({
     tags: {

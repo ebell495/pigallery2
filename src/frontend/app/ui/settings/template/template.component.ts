@@ -7,7 +7,7 @@ import {WebConfig} from '../../../../../common/config/private/WebConfig';
 import {JobProgressDTO} from '../../../../../common/entities/job/JobProgressDTO';
 import {JobDTOUtils} from '../../../../../common/entities/job/JobDTO';
 import {ScheduledJobsService} from '../scheduled-jobs.service';
-import {UntypedFormControl} from '@angular/forms';
+import { UntypedFormControl, FormsModule } from '@angular/forms';
 import {Subscription} from 'rxjs';
 import {IWebConfigClassPrivate} from 'typeconfig/src/decorators/class/IWebConfigClass';
 import {ConfigPriority, TAGS} from '../../../../../common/config/public/ClientConfig';
@@ -17,6 +17,11 @@ import {WebConfigClassBuilder} from 'typeconfig/web';
 import {ErrorDTO} from '../../../../../common/entities/Error';
 import {ISettingsComponent} from './ISettingsComponent';
 import {CustomSettingsEntries} from './CustomSettingsEntries';
+import { NgIconComponent } from '@ng-icons/core';
+import { NgIf, NgTemplateOutlet, NgFor, AsyncPipe } from '@angular/common';
+import { SettingsEntryComponent } from './settings-entry/settings-entry.component';
+import { JobButtonComponent } from '../workflow/button/job-button.settings.component';
+import { JobProgressComponent } from '../workflow/progress/job-progress.settings.component';
 
 
 interface ConfigState {
@@ -52,9 +57,10 @@ export interface RecursiveState extends ConfigState {
 }
 
 @Component({
-  selector: 'app-settings-template',
-  templateUrl: './template.component.html',
-  styleUrls: ['./template.component.css']
+    selector: 'app-settings-template',
+    templateUrl: './template.component.html',
+    styleUrls: ['./template.component.css'],
+    imports: [FormsModule, NgIconComponent, NgIf, NgTemplateOutlet, NgFor, SettingsEntryComponent, JobButtonComponent, JobProgressComponent, AsyncPipe]
 })
 export class TemplateComponent implements OnInit, OnChanges, OnDestroy, ISettingsComponent {
 

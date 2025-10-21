@@ -3,17 +3,17 @@ import {ClientClass} from './config/public/Config';
 let Config: ClientClass;
 
 if (typeof window !== 'undefined') {
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
   Config = require('./config/public/Config').Config;
 } else {
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
   Config = require('./config/private/Config').Config;
 }
 
 export class SupportedFormats {
   static Photos = Config.Media.Photo.supportedFormats;
-  // Browser supported video formats
-  // Read more:  https://www.w3schools.com/html/html5_video.asp
+  // Browser-supported video formats
+  // Read more: https://www.w3schools.com/html/html5_video.asp
   static Videos = Config.Media.Video.supportedFormats;
   static MetaFiles = Config.MetaFile.supportedFormats;
   // These formats need to be transcoded (with the built-in ffmpeg support)

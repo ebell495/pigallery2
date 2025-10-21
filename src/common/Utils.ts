@@ -1,4 +1,4 @@
-import { HTMLChar } from './HTMLCharCodes';
+import {HTMLChar} from './HTMLCharCodes';
 
 export class Utils {
   static GUID(): string {
@@ -24,11 +24,17 @@ export class Utils {
     });
   }
 
-  static removeNullOrEmptyObj<T extends { [key: string]: any }>(obj: T): T {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  static removeNullOrEmptyObj<T extends Record<string, any>>(obj: T): T {
     if (typeof obj !== 'object' || obj == null) {
       return obj;
     }
-
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    if((obj as any)._____removeNullOrEmptyObjvisiting){
+      throw new Error('Recursive call detected');
+    }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (obj as any)._____removeNullOrEmptyObjvisiting = true;
     const keys = Object.keys(obj);
     for (const key of keys) {
       if (obj[key] !== null && typeof obj[key] === 'object') {
@@ -41,6 +47,8 @@ export class Utils {
         delete obj[key];
       }
     }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    delete (obj as any)._____removeNullOrEmptyObjvisiting;
     return obj;
   }
 
@@ -49,13 +57,15 @@ export class Utils {
   }
 
   static shallowClone<T>(object: T): T {
-    const c: any = {};
+    const c: T = {} as T;
     for (const e of Object.entries(object)) {
-      c[e[0]] = e[1];
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (c as Record<string, any>)[e[0]] = e[1];
     }
     return c;
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   static zeroPrefix(number: any, length: number): string {
     if (!isNaN(number)) {
       const zerosToAdd = Math.max(length - String(number).length, 0);
@@ -69,6 +79,7 @@ export class Utils {
   /**
    * Checks if the two input (let them be objects or arrays or just primitives) are equal
    */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   static equalsFilter(object: any, filter: any, skipProp: string[] = []): boolean {
     if (typeof filter !== 'object' || filter == null) {
       return object === filter;
@@ -127,7 +138,7 @@ export class Utils {
     if (!(d instanceof Date)) {
       d = new Date(d);
     }
-    d = new Date(new Date(d).toISOString().substring(0,19) + (offset ? offset : '+00:00'))
+    d = new Date(new Date(d).toISOString().substring(0, 19) + (offset ? offset : '+00:00'));
     d.setUTCHours(0);
     d.setUTCMinutes(0);
     d.setUTCSeconds(0);
@@ -140,14 +151,14 @@ export class Utils {
     if (!(d instanceof Date)) {
       d = new Date(d);
     }
-    return new Date(new Date(d).toISOString().substring(0,19) + (offset ? offset : '+00:00')).getUTCFullYear();
+    return new Date(new Date(d).toISOString().substring(0, 19) + (offset ? offset : '+00:00')).getUTCFullYear();
   }
 
   static getFullYear(d: number | Date, offset: string) {
     if (!(d instanceof Date)) {
       d = new Date(d);
     }
-    return new Date(new Date(d).toISOString().substring(0,19) + (offset ? offset : '')).getFullYear();
+    return new Date(new Date(d).toISOString().substring(0, 19) + (offset ? offset : '')).getFullYear();
   }
 
   //function to convert timestamp into milliseconds taking offset into account
@@ -156,10 +167,10 @@ export class Utils {
       return undefined;
     }
     //replace : with - in the yyyy-mm-dd part of the timestamp.
-    let formattedTimestamp = timestamp.substring(0,9).replaceAll(':', '-') + timestamp.substring(9,timestamp.length);
-    if (formattedTimestamp.indexOf("Z") > 0) { //replace Z (and what comes after the Z) with offset
-      formattedTimestamp = formattedTimestamp.substring(0, formattedTimestamp.indexOf("Z")) + (offset ? offset : '+00:00');
-    } else if (formattedTimestamp.indexOf("+") > 0 || timestamp.substring(9,timestamp.length).indexOf("-") > 0) { //don't do anything
+    let formattedTimestamp = timestamp.substring(0, 9).replaceAll(':', '-') + timestamp.substring(9, timestamp.length);
+    if (formattedTimestamp.indexOf('Z') > 0) { //replace Z (and what comes after the Z) with offset
+      formattedTimestamp = formattedTimestamp.substring(0, formattedTimestamp.indexOf('Z')) + (offset ? offset : '+00:00');
+    } else if (formattedTimestamp.indexOf('+') > 0 || timestamp.substring(9, timestamp.length).indexOf('-') > 0) { //don't do anything
     } else { //add offset
       formattedTimestamp = formattedTimestamp + (offset ? offset : '+00:00');
     }
@@ -167,7 +178,7 @@ export class Utils {
     return Date.parse(formattedTimestamp);
   }
 
-  static splitTimestampAndOffset(timestamp: string): [string|undefined, string|undefined] {
+  static splitTimestampAndOffset(timestamp: string): [string | undefined, string | undefined] {
     if (!timestamp) {
       return [undefined, undefined];
     }
@@ -184,6 +195,7 @@ export class Utils {
 
 
   //function to calculate offset from exif.exif.gpsTimeStamp or exif.gps.GPSDateStamp + exif.gps.GPSTimestamp
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   static getTimeOffsetByGPSStamp(timestamp: string, gpsTimeStamp: string, gps: any) {
     let UTCTimestamp = gpsTimeStamp;
     if (!UTCTimestamp &&
@@ -191,12 +203,13 @@ export class Utils {
       gps.GPSDateStamp &&
       gps.GPSTimeStamp) { //else use exif.gps.GPS*Stamp if available
       //GPS timestamp is always UTC (+00:00)
-      UTCTimestamp = gps.GPSDateStamp.replaceAll(':', '-') + " " + gps.GPSTimeStamp.map((num: any) => Utils.zeroPrefix(num ,2)).join(':');
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      UTCTimestamp = gps.GPSDateStamp.replaceAll(':', '-') + ' ' + gps.GPSTimeStamp.map((num: any) => Utils.zeroPrefix(num, 2)).join(':');
     }
     if (UTCTimestamp && timestamp) {
-      //offset in minutes is the difference between gps timestamp and given timestamp
+      //offset in minutes is the difference between gps timestamp, and given timestamp
       //to calculate this correctly, we have to work with the same offset
-      const offsetMinutes: number = Math.round((Utils.timestampToMS(timestamp, '+00:00')- Utils.timestampToMS(UTCTimestamp, '+00:00')) / 1000 / 60);
+      const offsetMinutes: number = Math.round((Utils.timestampToMS(timestamp, '+00:00') - Utils.timestampToMS(UTCTimestamp, '+00:00')) / 1000 / 60);
       return Utils.getOffsetString(offsetMinutes);
     } else {
       return undefined;
@@ -206,8 +219,8 @@ export class Utils {
   static getOffsetString(offsetMinutes: number) {
     if (-720 <= offsetMinutes && offsetMinutes <= 840) {
       //valid offset is within -12 and +14 hrs (https://en.wikipedia.org/wiki/List_of_UTC_offsets)
-      return (offsetMinutes < 0 ? "-" : "+") +                              //leading +/-
-        Utils.zeroPrefix(Math.trunc(Math.abs(offsetMinutes) / 60), 2) + ":" +        //zeropadded hours and ':'
+      return (offsetMinutes < 0 ? '-' : '+') +                              //leading +/-
+        Utils.zeroPrefix(Math.trunc(Math.abs(offsetMinutes) / 60), 2) + ':' +        //zeropadded hours and ':'
         Utils.zeroPrefix((Math.abs(offsetMinutes) % 60), 2);                         //zeropadded minutes
     } else {
       return undefined;
@@ -218,9 +231,9 @@ export class Utils {
     const regex = /^([+-](0[0-9]|1[0-4]):[0-5][0-9])$/;  //checks if offset is between -14:00 and +14:00.
                                                          //-12:00 is the lowest valid UTC-offset, but we allow down to -14 for efficiency
     if (regex.test(offsetString)) {
-      const hhmm = offsetString.split(":");
+      const hhmm = offsetString.split(':');
       const hours = parseInt(hhmm[0]);
-      return hours < 0 ? ((hours*60) - parseInt(hhmm[1])) : ((hours*60) + parseInt(hhmm[1]));
+      return hours < 0 ? ((hours * 60) - parseInt(hhmm[1])) : ((hours * 60) + parseInt(hhmm[1]));
     } else {
       return undefined;
     }
@@ -241,9 +254,9 @@ export class Utils {
       return creationDate;
     }
   }
-  
+
   static isLeapYear(year: number) {
-    return (0 == year % 4) && (0 != year % 100) || (0 == year % 400)
+    return (0 == year % 4) && (0 != year % 100) || (0 == year % 400);
   }
 
   static isDateFromLeapYear(date: Date) {
@@ -266,7 +279,7 @@ export class Utils {
   //this function makes sure that if date is the 31st and you add a month, you will get the last day of the next month
   //so adding or subtracting a month from 31st of march will give 30th of april or 28th of february respectively (29th on leap years).
   static addMonthToDate(date: Date, numMonths: number) {
-    const result = new Date(date)
+    const result = new Date(date);
     const expectedMonth = ((date.getMonth() + numMonths) % 12 + 12) % 12; //inner %12 + 12 makes correct handling of negative months
     result.setMonth(result.getMonth() + numMonths);
     if (result.getMonth() !== expectedMonth) {
@@ -285,11 +298,12 @@ export class Utils {
     return size.toFixed(2) + postFixes[index];
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   static getUnique(arr: any[]) {
     return arr.filter((value, index, arr) => arr.indexOf(value) === index);
   }
 
-  static createRange(from: number, to: number): Array<number> {
+  static createRange(from: number, to: number): number[] {
     const arr = new Array(to - from + 1);
     let c = to - from + 1;
     while (c--) {
@@ -327,6 +341,7 @@ export class Utils {
     return url.substring(0, url.length - 1);
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   public static updateKeys(targetObject: any, sourceObject: any): void {
     Object.keys(sourceObject).forEach((key): void => {
       if (typeof targetObject[key] === 'undefined') {
@@ -340,6 +355,7 @@ export class Utils {
     });
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   public static setKeys(targetObject: any, sourceObject: any): void {
     Object.keys(sourceObject).forEach((key): void => {
       if (typeof targetObject[key] === 'object') {
@@ -350,6 +366,7 @@ export class Utils {
     });
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   public static setKeysForced(targetObject: any, sourceObject: any): void {
     Object.keys(sourceObject).forEach((key): void => {
       if (typeof sourceObject[key] === 'object') {
@@ -363,12 +380,14 @@ export class Utils {
     });
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   public static isValidEnumInt(EnumType: any, value: number) {
     return typeof EnumType[value] === 'string';
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   public static enumToArray(EnumType: any): { key: number; value: string }[] {
-    const arr: Array<{ key: number; value: string }> = [];
+    const arr: { key: number; value: string }[] = [];
     for (const enumMember in EnumType) {
       // eslint-disable-next-line no-prototype-builtins
       if (!EnumType.hasOwnProperty(enumMember)) {
@@ -415,6 +434,19 @@ export class Utils {
 
   public static asciiToUTF8(text: string): string {
     if (text) {
+      // Check for corrupted IPTC data - very long strings with binary content indicate corruption
+      // The specific corruption we observed: 25k+ chars with mix of high-ASCII and control chars
+      if (text.length > 1000) {
+        // Count characters that are likely binary corruption (high-ASCII and control chars)
+        const printableAscii = text.replace(/[^\x20-\x7E]/g, '').length;
+        const nonPrintableRatio = (text.length - printableAscii) / text.length;
+
+        // If more than 30% are non-printable ASCII, it's likely corrupted binary data
+        if (nonPrintableRatio > 0.3) {
+          return undefined;
+        }
+      }
+
       return Buffer.from(text, 'ascii').toString('utf-8');
     } else {
       return text;
@@ -422,13 +454,12 @@ export class Utils {
   }
 
 
-
   public static decodeHTMLChars(text: string): string {
     if (text) {
-      const newtext = text.replace(/&#([0-9]{1,3});/gi, function (match, numStr) {
+      const newtext = text.replace(/&#([0-9]{1,3});/gi, function(match, numStr) {
         return String.fromCharCode(parseInt(numStr, 10));
       });
-      return newtext.replace(/&[^;]+;/g, function (match) {
+      return newtext.replace(/&[^;]+;/g, function(match) {
         const char = HTMLChar[match];
         return char ? char : match;
       });
@@ -458,16 +489,19 @@ export class Utils {
     );
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   public static getAnyX(num: number, arr: any[], start = 0): any[][] {
     if (num <= 0 || num > arr.length || start >= arr.length) {
       return [];
     }
     if (num <= 1) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       return arr.slice(start).map((e): any[] => [e]);
     }
     if (num === arr.length - start) {
       return [arr.slice(start)];
     }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const ret: any[][] = [];
     for (let i = start; i < arr.length; ++i) {
       Utils.getAnyX(num - 1, arr, i + 1).forEach((a): void => {
@@ -485,13 +519,13 @@ export class Utils {
     const parts = text.match(/^([0-9]+),([0-9.]+)([EWNS])$/);
     const degrees: number = parseInt(parts[1], 10);
     const minutes: number = parseFloat(parts[2]);
-    const sign = (parts[3] === "N" || parts[3] === "E") ? 1 : -1;
-    return (sign * (degrees + (minutes / 60.0)))
+    const sign = (parts[3] === 'N' || parts[3] === 'E') ? 1 : -1;
+    return (sign * (degrees + (minutes / 60.0)));
   }
 
 
   public static sortableFilename(filename: string): string {
-    const lastDot = filename.lastIndexOf(".");
+    const lastDot = filename.lastIndexOf('.');
 
     // Avoid 0 as well as -1 to prevent empty names for extensionless dot-files
     if (lastDot > 0) {
@@ -504,7 +538,7 @@ export class Utils {
 }
 
 export class LRU<V> {
-  data: { [key: string]: { value: V; usage: number } } = {};
+  data: Record<string, { value: V; usage: number }> = {};
 
   constructor(public readonly size: number) {
   }

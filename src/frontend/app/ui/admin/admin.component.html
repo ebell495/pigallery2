@@ -87,12 +87,12 @@
               <div class="py-md-1 px-md-0"
                    *ngFor="let s of contents;"
                    [hidden]="!s.HasAvailableSettings">
-                <button class="btn btn-link nav-link text-start p-0 text-nowrap"
+                <button class="btn btn-link btn-settings-nav nav-link text-start p-0 text-nowrap"
                         (click)="viewportScroller.scrollToAnchor(s.ConfigPath)"
                 >
                   <ng-icon [name]="s.icon"></ng-icon> {{s.Name}}
                 </button>
-                <button class="btn btn-link nav-link text-start ms-3 p-0  text-nowrap"
+                <button class="btn btn-link btn-settings-nav nav-link text-start ms-3 p-0  text-nowrap"
                         *ngFor="let n of s.nestedConfigs;"
                         [hidden]="!n.visible()"
                         (click)="viewportScroller.scrollToAnchor(n.id)">

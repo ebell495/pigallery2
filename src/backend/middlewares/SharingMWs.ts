@@ -6,6 +6,7 @@ import {Config} from '../../common/config/private/Config';
 import {QueryParams} from '../../common/QueryParams';
 import * as path from 'path';
 import {UserRoles} from '../../common/entities/UserDTO';
+import {SearchQueryDTO, SearchQueryTypes, TextSearch, TextSearchQueryMatchTypes} from '../../common/entities/SearchQueryDTO';
 
 export class SharingMWs {
   public static async getSharing(
@@ -13,12 +14,12 @@ export class SharingMWs {
     res: Response,
     next: NextFunction
   ): Promise<void> {
-    if (Config.Sharing.enabled === false) {
-      return next();
-    }
-    const sharingKey = req.params[QueryParams.gallery.sharingKey_params];
-
     try {
+      if (Config.Sharing.enabled === false) {
+        return next();
+      }
+      const sharingKey = req.params[QueryParams.gallery.sharingKey_params];
+
       req.resultPipe =
         await ObjectManagers.getInstance().SharingManager.findOne(sharingKey);
       return next();
@@ -38,12 +39,12 @@ export class SharingMWs {
     res: Response,
     next: NextFunction
   ): Promise<void> {
-    if (Config.Sharing.enabled === false) {
-      return next();
-    }
-    const sharingKey = req.params[QueryParams.gallery.sharingKey_params];
-
     try {
+      if (Config.Sharing.enabled === false) {
+        return next();
+      }
+      const sharingKey = req.params[QueryParams.gallery.sharingKey_params];
+
       req.resultPipe =
         {sharingKey: (await ObjectManagers.getInstance().SharingManager.findOne(sharingKey)).sharingKey} as SharingDTOKey;
       return next();
@@ -63,55 +64,63 @@ export class SharingMWs {
     res: Response,
     next: NextFunction
   ): Promise<void> {
-    if (Config.Sharing.enabled === false) {
-      return next();
-    }
-    if (
-      typeof req.body === 'undefined' ||
-      typeof req.body.createSharing === 'undefined'
-    ) {
-      return next(
-        new ErrorDTO(ErrorCodes.INPUT_ERROR, 'createSharing filed is missing')
-      );
-    }
-    const createSharing: CreateSharingDTO = req.body.createSharing;
-
-    if (Config.Sharing.passwordRequired && !createSharing.password) {
-
-      return next(
-        new ErrorDTO(ErrorCodes.INPUT_ERROR, 'Password is required.')
-      );
-    }
-
-    let sharingKey = SharingMWs.generateKey();
-
-    // create one not yet used
-    // eslint-disable-next-line no-constant-condition
-    while (true) {
-      try {
-        await ObjectManagers.getInstance().SharingManager.findOne(sharingKey);
-        sharingKey = this.generateKey();
-      } catch (err) {
-        break;
-      }
-    }
-
-    const directoryName = path.normalize(req.params['directory'] || '/');
-    const sharing: SharingDTO = {
-      id: null,
-      sharingKey,
-      path: directoryName,
-      password: createSharing.password,
-      creator: req.session['user'],
-      expires:
-        createSharing.valid >= 0 // if === -1 its forever
-          ? Date.now() + createSharing.valid
-          : new Date(9999, 0, 1).getTime(), // never expire
-      includeSubfolders: createSharing.includeSubfolders,
-      timeStamp: Date.now(),
-    };
-
     try {
+      if (Config.Sharing.enabled === false) {
+        return next();
+      }
+      if (
+        typeof req.body === 'undefined' ||
+        typeof req.body.createSharing === 'undefined'
+      ) {
+        return next(
+          new ErrorDTO(ErrorCodes.INPUT_ERROR, 'createSharing filed is missing')
+        );
+      }
+      const createSharing: CreateSharingDTO = req.body.createSharing;
+
+      if (Config.Sharing.passwordRequired && !createSharing.password) {
+
+        return next(
+          new ErrorDTO(ErrorCodes.INPUT_ERROR, 'Password is required.')
+        );
+      }
+
+      let sharingKey = SharingMWs.generateKey();
+
+      // create one not yet used
+      // eslint-disable-next-line no-constant-condition
+      while (true) {
+        try {
+          await ObjectManagers.getInstance().SharingManager.findOne(sharingKey);
+          sharingKey = this.generateKey();
+        } catch (err) {
+          break;
+        }
+      }
+
+      const directoryName = path.normalize(req.params['directory'] || '/');
+
+      // Prefer provided searchQuery; otherwise fallback to strict directory exact-match query for compatibility
+      const searchQuery = createSharing.searchQuery || ({
+        type: SearchQueryTypes.directory,
+        text: directoryName,
+        matchType: TextSearchQueryMatchTypes.exact_match,
+        negate: false
+      } as TextSearch);
+
+      const sharing: SharingDTO = {
+        id: null,
+        sharingKey,
+        searchQuery,
+        password: createSharing.password,
+        creator: req.session.context?.user,
+        expires:
+          createSharing.valid >= 0 // if === -1 it's forever
+            ? Date.now() + createSharing.valid
+            : new Date(9999, 0, 1).getTime(), // never expire
+        timeStamp: Date.now(),
+      };
+
       req.resultPipe =
         await ObjectManagers.getInstance().SharingManager.createSharing(
           sharing
@@ -134,38 +143,45 @@ export class SharingMWs {
     res: Response,
     next: NextFunction
   ): Promise<void> {
-    if (Config.Sharing.enabled === false) {
-      return next();
-    }
-    if (
-      typeof req.body === 'undefined' ||
-      typeof req.body.updateSharing === 'undefined'
-    ) {
-      return next(
-        new ErrorDTO(ErrorCodes.INPUT_ERROR, 'updateSharing filed is missing')
-      );
-    }
-    const updateSharing: CreateSharingDTO = req.body.updateSharing;
-    const directoryName = path.normalize(req.params['directory'] || '/');
-    const sharing: SharingDTO = {
-      id: updateSharing.id,
-      path: directoryName,
-      sharingKey: '',
-      password:
-        updateSharing.password && updateSharing.password !== ''
-          ? updateSharing.password
-          : null,
-      creator: req.session['user'],
-      expires:
-        updateSharing.valid >= 0 // if === -1 its forever
-          ? Date.now() + updateSharing.valid
-          : new Date(9999, 0, 1).getTime(), // never expire
-      includeSubfolders: updateSharing.includeSubfolders,
-      timeStamp: Date.now(),
-    };
-
     try {
-      const forceUpdate = req.session['user'].role >= UserRoles.Admin;
+      if (Config.Sharing.enabled === false) {
+        return next();
+      }
+      if (
+        typeof req.body === 'undefined' ||
+        typeof req.body.updateSharing === 'undefined'
+      ) {
+        return next(
+          new ErrorDTO(ErrorCodes.INPUT_ERROR, 'updateSharing filed is missing')
+        );
+      }
+      const updateSharing: CreateSharingDTO = req.body.updateSharing;
+      const directoryName = path.normalize(req.params['directory'] || '/');
+
+      const searchQuery = updateSharing.searchQuery || ({
+        type: SearchQueryTypes.directory,
+        text: directoryName,
+        matchType: TextSearchQueryMatchTypes.exact_match,
+        negate: false
+      } as TextSearch);
+
+      const sharing: SharingDTO = {
+        id: updateSharing.id,
+        searchQuery,
+        sharingKey: '',
+        password:
+          updateSharing.password && updateSharing.password !== ''
+            ? updateSharing.password
+            : null,
+        creator: req.session.context?.user,
+        expires:
+          updateSharing.valid >= 0 // if === -1 its forever
+            ? Date.now() + updateSharing.valid
+            : new Date(9999, 0, 1).getTime(), // never expire
+        timeStamp: Date.now(),
+      };
+
+      const forceUpdate = req.session.context.user.role >= UserRoles.Admin;
       req.resultPipe =
         await ObjectManagers.getInstance().SharingManager.updateSharing(
           sharing,
@@ -188,24 +204,24 @@ export class SharingMWs {
     res: Response,
     next: NextFunction
   ): Promise<void> {
-    if (Config.Sharing.enabled === false) {
-      return next();
-    }
-    if (
-      typeof req.params === 'undefined' ||
-      typeof req.params['sharingKey'] === 'undefined'
-    ) {
-      return next(
-        new ErrorDTO(ErrorCodes.INPUT_ERROR, 'sharingKey is missing')
-      );
-    }
-    const sharingKey: string = req.params['sharingKey'];
-
     try {
+      if (Config.Sharing.enabled === false) {
+        return next();
+      }
+      if (
+        typeof req.params === 'undefined' ||
+        typeof req.params['sharingKey'] === 'undefined'
+      ) {
+        return next(
+          new ErrorDTO(ErrorCodes.INPUT_ERROR, 'sharingKey is missing')
+        );
+      }
+      const sharingKey: string = req.params['sharingKey'];
+
       // Check if user has the right to delete sharing.
-      if (req.session['user'].role < UserRoles.Admin) {
+      if (req.session.context?.user.role < UserRoles.Admin) {
         const s = await ObjectManagers.getInstance().SharingManager.findOne(sharingKey);
-        if (s.creator.id !== req.session['user'].id) {
+        if (s.creator.id !== req.session.context?.user.id) {
           return next(new ErrorDTO(ErrorCodes.NOT_AUTHORISED, 'Can\'t delete sharing.'));
         }
       }
@@ -231,10 +247,10 @@ export class SharingMWs {
     res: Response,
     next: NextFunction
   ): Promise<void> {
-    if (Config.Sharing.enabled === false) {
-      return next();
-    }
     try {
+      if (Config.Sharing.enabled === false) {
+        return next();
+      }
       req.resultPipe =
         await ObjectManagers.getInstance().SharingManager.listAll();
       return next();
@@ -249,23 +265,25 @@ export class SharingMWs {
     }
   }
 
-  public static async listSharingForDir(
+  public static async listSharingForQuery(
     req: Request,
     res: Response,
     next: NextFunction
   ): Promise<void> {
-    if (Config.Sharing.enabled === false) {
-      return next();
-    }
-
-    const dir = path.normalize(req.params['directory'] || '/');
     try {
-      if (req.session['user'].role >= UserRoles.Admin) {
+      if (Config.Sharing.enabled === false) {
+        return next();
+      }
+      if (!req.resultPipe) {
+        return next();
+      }
+      const query: SearchQueryDTO = req.resultPipe as any;
+      if (req.session.context?.user.role >= UserRoles.Admin) {
         req.resultPipe =
-          await ObjectManagers.getInstance().SharingManager.listAllForDir(dir);
+          await ObjectManagers.getInstance().SharingManager.listAllForQuery(query);
       } else {
         req.resultPipe =
-          await ObjectManagers.getInstance().SharingManager.listAllForDir(dir, req.session['user']);
+          await ObjectManagers.getInstance().SharingManager.listAllForQuery(query, req.session.context?.user);
       }
       return next();
     } catch (err) {

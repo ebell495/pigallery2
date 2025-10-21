@@ -32,6 +32,7 @@ out-tsc/
 ffmpeg/
 locale.source.xlf
 test.*
+test2.*
 /db/
 /test/cypress/screenshots/
 /extensions/
@@ -47,3 +48,18 @@ images1
 images
 demo/
 pigallery2-release/
+/demo/tmp2/
+/demo/tmp33asd/
+/demo/images2/
+/icons/
+/*.js.*
+/*.js.map
+/sendmail/
+/test/cypress/e2e/fb-messenger.*
+/test/cypress/support/*.js*
+/test/cypress/support/*.js.map
+/test/cypress/e2e/*.cy.js*
+/test/cypress/e2e/*.cy.js.map
+/docs/index.html.js*
+/bm_config.json
+/cypress.env.json

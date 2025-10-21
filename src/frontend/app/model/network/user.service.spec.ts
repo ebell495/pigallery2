@@ -1,11 +1,12 @@
 import {inject, TestBed} from '@angular/core/testing';
-import {HttpClientTestingModule} from '@angular/common/http/testing';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import {NetworkService} from './network.service';
 import {UserService} from './user.service';
 import {LoginCredential} from '../../../../common/entities/LoginCredential';
 import {LoadingBarService} from '@ngx-loading-bar/core';
 import {ShareService} from '../../ui/gallery/share.service';
 import {VersionService} from '../version.service';
+import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
 
 class MockShareService {
   wait(): Promise<boolean> {
@@ -20,15 +21,17 @@ class MockShareService {
 describe('UserService', (): void => {
   beforeEach((): void => {
     TestBed.configureTestingModule({
-      imports: [HttpClientTestingModule],
-      providers: [
+    imports: [],
+    providers: [
         VersionService,
         UserService,
         LoadingBarService,
         NetworkService,
-        {provide: ShareService, useClass: MockShareService},
-      ],
-    });
+        { provide: ShareService, useClass: MockShareService },
+        provideHttpClient(withInterceptorsFromDi()),
+        provideHttpClientTesting(),
+    ]
+});
   });
 
   it('should call postJson at login', inject(

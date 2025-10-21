@@ -5,20 +5,57 @@ import {NextFunction, Request, Response} from 'express';
 import {ErrorCodes, ErrorDTO} from '../../common/entities/Error';
 import {ParentDirectoryDTO,} from '../../common/entities/DirectoryDTO';
 import {ObjectManagers} from '../model/ObjectManagers';
-import {ContentWrapper} from '../../common/entities/ConentWrapper';
+import {ContentWrapper} from '../../common/entities/ContentWrapper';
 import {ProjectPath} from '../ProjectPath';
 import {Config} from '../../common/config/private/Config';
-import {UserDTOUtils} from '../../common/entities/UserDTO';
 import {MediaDTO, MediaDTOUtils} from '../../common/entities/MediaDTO';
 import {QueryParams} from '../../common/QueryParams';
 import {VideoProcessing} from '../model/fileaccess/fileprocessing/VideoProcessing';
 import {SearchQueryDTO, SearchQueryTypes,} from '../../common/entities/SearchQueryDTO';
 import {LocationLookupException} from '../exceptions/LocationLookupException';
-import {SupportedFormats} from '../../common/SupportedFormats';
 import {ServerTime} from './ServerTimingMWs';
 import {SortByTypes} from '../../common/entities/SortingMethods';
 
 export class GalleryMWs {
+  /**
+   * Middleware to safely parse searchQueryDTO from URL parameters
+   * Handles URL decoding and JSON parsing with proper error handling
+   */
+  public static parseSearchQuery(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): void {
+    try {
+      if (!req.params['searchQueryDTO']) {
+        return next();
+      }
+
+      let rawQueryParam = req.params['searchQueryDTO'] as string;
+
+      let query: SearchQueryDTO;
+      try {
+        query = JSON.parse(rawQueryParam);
+      } catch (parseError) {
+        return next(
+          new ErrorDTO(
+            ErrorCodes.INPUT_ERROR,
+            'Invalid search query JSON: ' + parseError.message,
+            parseError
+          )
+        );
+      }
+
+      // Store the parsed query for use by subsequent middlewares
+      req.resultPipe = query;
+      return next();
+    } catch (err) {
+      return next(
+        new ErrorDTO(ErrorCodes.GENERAL_ERROR, 'Error parsing search query', err)
+      );
+    }
+  }
+
   @ServerTime('1.db', 'List Directory')
   public static async listDirectory(
     req: Request,
@@ -41,6 +78,7 @@ export class GalleryMWs {
     try {
       const directory =
         await ObjectManagers.getInstance().GalleryManager.listDirectory(
+          req.session.context,
           directoryName,
           parseInt(
             req.query[QueryParams.gallery.knownLastModified] as string,
@@ -55,15 +93,6 @@ export class GalleryMWs {
       if (directory == null) {
         req.resultPipe = new ContentWrapper(null, null, true);
         return next();
-      }
-      if (
-        req.session['user'].permissions &&
-        req.session['user'].permissions.length > 0 &&
-        req.session['user'].permissions[0] !== '/*'
-      ) {
-        directory.directories = directory.directories.filter((d): boolean =>
-          UserDTOUtils.isDirectoryAvailable(d, req.session['user'].permissions)
-        );
       }
       req.resultPipe = new ContentWrapper(directory, null);
       return next();
@@ -87,22 +116,25 @@ export class GalleryMWs {
     if (Config.Gallery.NavBar.enableDownloadZip === false) {
       return next();
     }
-    const directoryName = req.params['directory'] || '/';
-    const absoluteDirectoryName = path.join(
-      ProjectPath.ImageFolder,
-      directoryName
-    );
-    try {
-      if ((await fsp.stat(absoluteDirectoryName)).isDirectory() === false) {
-        return next();
-      }
-    } catch (e) {
+
+    if (Config.Search.enabled === false || !req.resultPipe) {
       return next();
     }
 
+    // Handle search-query-based zip
     try {
+      const query: SearchQueryDTO = req.resultPipe as any;
+
+      // Get all media items from search
+      const searchResult = await ObjectManagers.getInstance().SearchManager.search(
+        req.session.context, query);
+
+      if (!searchResult.media || searchResult.media.length === 0) {
+        return next(new ErrorDTO(ErrorCodes.INPUT_ERROR, 'No media found for zip'));
+      }
+
       res.set('Content-Type', 'application/zip');
-      res.set('Content-Disposition', 'attachment; filename=Gallery.zip');
+      res.set('Content-Disposition', 'attachment; filename=SearchResults.zip');
 
       const archive = archiver('zip', {
         store: true, // disable compression
@@ -118,22 +150,41 @@ export class GalleryMWs {
 
       archive.pipe(res);
 
-      // append photos in absoluteDirectoryName
-      // using case-insensitive glob of extensions
-      for (const ext of SupportedFormats.WithDots.Photos) {
-        archive.glob(`*${ext}`, {cwd: absoluteDirectoryName, nocase: true});
-      }
-      // append videos in absoluteDirectoryName
-      // using case-insensitive glob of extensions
-      for (const ext of SupportedFormats.WithDots.Videos) {
-        archive.glob(`*${ext}`, {cwd: absoluteDirectoryName, nocase: true});
+      // Track used filenames (case insensitive)
+      const usedNames = new Map<string, number>();
+
+      // Add each media file to the archive with unique names
+      for (const media of searchResult.media) {
+        const mediaPath = path.join(
+          ProjectPath.ImageFolder,
+          media.directory.path,
+          media.directory.name,
+          media.name
+        );
+
+        // Get file extension and base name
+        const ext = path.extname(media.name);
+        const baseName = path.basename(media.name, ext);
+        const lowerName = media.name.toLowerCase();
+
+        // Check if this name was used before
+        let uniqueName = media.name;
+        if (usedNames.has(lowerName)) {
+          const count = usedNames.get(lowerName) + 1;
+          usedNames.set(lowerName, count);
+          uniqueName = baseName + '_' + count + ext;
+        } else {
+          usedNames.set(lowerName, 1);
+        }
+
+        archive.file(mediaPath, {name: uniqueName});
       }
 
       await archive.finalize();
       return next();
     } catch (err) {
       return next(
-        new ErrorDTO(ErrorCodes.GENERAL_ERROR, 'Error creating zip', err)
+        new ErrorDTO(ErrorCodes.GENERAL_ERROR, 'Error creating search results zip', err)
       );
     }
   }
@@ -211,16 +262,16 @@ export class GalleryMWs {
     res: Response,
     next: NextFunction
   ): Promise<void> {
-    if (!req.resultPipe) {
-      return next();
-    }
-    const fullMediaPath = req.resultPipe as string;
-
-    const convertedVideo =
-      VideoProcessing.generateConvertedFilePath(fullMediaPath);
-
-    // check if transcoded video exist
     try {
+      if (!req.resultPipe) {
+        return next();
+      }
+      const fullMediaPath = req.resultPipe as string;
+
+      const convertedVideo =
+        VideoProcessing.generateConvertedFilePath(fullMediaPath);
+
+      // check if transcoded video exist
       await fsp.access(convertedVideo);
       req.resultPipe = convertedVideo;
       // eslint-disable-next-line no-empty
@@ -236,19 +287,17 @@ export class GalleryMWs {
     res: Response,
     next: NextFunction
   ): Promise<void> {
-    if (
-      Config.Search.enabled === false ||
-      !req.params['searchQueryDTO']
-    ) {
-      return next();
-    }
-
-    const query: SearchQueryDTO = JSON.parse(
-      req.params['searchQueryDTO'] as string
-    );
-
     try {
+      if (
+        Config.Search.enabled === false ||
+        !req.resultPipe
+      ) {
+        return next();
+      }
+
+      const query: SearchQueryDTO = req.resultPipe as any;
       const result = await ObjectManagers.getInstance().SearchManager.search(
+        req.session.context,
         query
       );
 
@@ -279,20 +328,21 @@ export class GalleryMWs {
     res: Response,
     next: NextFunction
   ): Promise<void> {
-    if (Config.Search.AutoComplete.enabled === false) {
-      return next();
-    }
-    if (!req.params['text']) {
-      return next();
-    }
-
-    let type: SearchQueryTypes = SearchQueryTypes.any_text;
-    if (req.query[QueryParams.gallery.search.type]) {
-      type = parseInt(req.query[QueryParams.gallery.search.type] as string, 10);
-    }
     try {
+      if (Config.Search.AutoComplete.enabled === false) {
+        return next();
+      }
+      if (!req.params['text']) {
+        return next();
+      }
+
+      let type: SearchQueryTypes = SearchQueryTypes.any_text;
+      if (req.query[QueryParams.gallery.search.type]) {
+        type = parseInt(req.query[QueryParams.gallery.search.type] as string, 10);
+      }
       req.resultPipe =
         await ObjectManagers.getInstance().SearchManager.autocomplete(
+          req.session.context,
           req.params['text'],
           type
         );
@@ -309,20 +359,20 @@ export class GalleryMWs {
     res: Response,
     next: NextFunction
   ): Promise<void> {
-    if (
-      Config.RandomPhoto.enabled === false ||
-      !req.params['searchQueryDTO']
-    ) {
-      return next();
-    }
-
     try {
-      const query: SearchQueryDTO = JSON.parse(
-        req.params['searchQueryDTO'] as string
-      );
+      if (
+        Config.RandomPhoto.enabled === false ||
+        !req.resultPipe
+      ) {
+        return next();
+      }
+
+      const query: SearchQueryDTO = req.resultPipe as any;
 
       const photos =
-        await ObjectManagers.getInstance().SearchManager.getNMedia(query, [{method: SortByTypes.Random, ascending: null}], 1, true);
+        await ObjectManagers.getInstance().SearchManager.getNMedia(
+          req.session.context,
+          query, [{method: SortByTypes.Random, ascending: null}], 1, true);
       if (!photos || photos.length !== 1) {
         return next(new ErrorDTO(ErrorCodes.INPUT_ERROR, 'No photo found'));
       }
@@ -332,6 +382,30 @@ export class GalleryMWs {
         photos[0].directory.name,
         photos[0].name
       );
+      return next();
+    } catch (e) {
+      return next(
+        new ErrorDTO(
+          ErrorCodes.GENERAL_ERROR,
+          'Can\'t get random photo: ' + e.toString()
+        )
+      );
+    }
+  }
+
+  public static async getMediaEntry(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
+    try {
+
+      if (!req.params['mediaPath']) {
+        return next();
+      }
+      const mediaPath = req.params['mediaPath'];
+
+      req.resultPipe = await ObjectManagers.getInstance().GalleryManager.getMedia(req.session.context, mediaPath);
       return next();
     } catch (e) {
       return next(

@@ -8,6 +8,7 @@ import {QueryParams} from '../../../../common/QueryParams';
 import {UserDTO, UserRoles} from '../../../../common/entities/UserDTO';
 import {Utils} from '../../../../common/Utils';
 import {Config} from '../../../../common/config/public/Config';
+import {SearchQueryDTO} from '../../../../common/entities/SearchQueryDTO';
 
 
 @Injectable()
@@ -80,8 +81,8 @@ export class ShareService {
         this.sharingSubject.value == null
       ) {
         this.sharingKey = user.usedSharingKey || this.getSharingKey();
-        if(!this.sharingKey){ //no key to fetch
-          return
+        if (!this.sharingKey) { //no key to fetch
+          return;
         }
         await this.getSharing();
       }
@@ -102,15 +103,28 @@ export class ShareService {
 
   public createSharing(
     dir: string,
-    includeSubFolders: boolean,
     password: string,
     valid: number
   ): Promise<SharingDTO> {
+    // Legacy dir-based API: backend will convert to strict directory searchQuery if searchQuery not provided
     return this.networkService.postJson('/share/' + dir, {
       createSharing: {
-        includeSubfolders: includeSubFolders,
         valid,
         ...(!!password && {password: password}) // only add password if present
+      } as CreateSharingDTO,
+    });
+  }
+
+  public createSharingByQuery(
+    searchQuery: SearchQueryDTO,
+    password: string,
+    valid: number
+  ): Promise<SharingDTO> {
+    return this.networkService.postJson('/share/', {
+      createSharing: {
+        valid,
+        ...(!!password && {password: password}),
+        searchQuery
       } as CreateSharingDTO,
     });
   }
@@ -118,16 +132,31 @@ export class ShareService {
   public updateSharing(
     dir: string,
     sharingId: number,
-    includeSubFolders: boolean,
     password: string,
     valid: number
   ): Promise<SharingDTO> {
+    // Legacy dir-based API: backend will convert to strict directory searchQuery if searchQuery not provided
     return this.networkService.putJson('/share/' + dir, {
       updateSharing: {
         id: sharingId,
-        includeSubfolders: includeSubFolders,
         valid,
         password,
+      } as CreateSharingDTO,
+    });
+  }
+
+  public updateSharingByQuery(
+    sharingId: number,
+    searchQuery: SearchQueryDTO,
+    password: string,
+    valid: number
+  ): Promise<SharingDTO> {
+    return this.networkService.putJson('/share/', {
+      updateSharing: {
+        id: sharingId,
+        valid,
+        password,
+        searchQuery
       } as CreateSharingDTO,
     });
   }
@@ -138,6 +167,23 @@ export class ShareService {
 
   public isSharing(): boolean {
     return this.sharingKey != null;
+  }
+
+  public async getSharingListForQuery(
+    query: SearchQueryDTO
+  ): Promise<SharingDTO[]> {
+    return this.networkService.getJson('/share/list/' + encodeURIComponent(JSON.stringify(query)));
+  }
+
+  public getSharingList(): Promise<SharingDTO[]> {
+    if (!Config.Sharing.enabled) {
+      return Promise.resolve([]);
+    }
+    return this.networkService.getJson('/share/listAll');
+  }
+
+  public deleteSharing(sharing: SharingDTO): Promise<void> {
+    return this.networkService.deleteJson('/share/' + encodeURIComponent(sharing.sharingKey));
   }
 
   private async getSharing(): Promise<void> {
@@ -164,23 +210,5 @@ export class ShareService {
       this.sharingIsValid.next(false);
       console.error(e);
     }
-  }
-
-  public async getSharingListForDir(
-    dir: string
-  ): Promise<SharingDTO[]> {
-    return this.networkService.getJson('/share/list/' + dir);
-  }
-
-
-  public getSharingList(): Promise<SharingDTO[]> {
-    if (!Config.Sharing.enabled) {
-      return Promise.resolve([]);
-    }
-    return this.networkService.getJson('/share/listAll');
-  }
-
-  public deleteSharing(sharing: SharingDTO): Promise<void> {
-    return this.networkService.deleteJson('/share/' + sharing.sharingKey);
   }
 }

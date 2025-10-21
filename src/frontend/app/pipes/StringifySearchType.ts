@@ -2,7 +2,10 @@ import {Pipe, PipeTransform} from '@angular/core';
 import {EnumTranslations} from '../ui/EnumTranslations';
 import {SearchQueryTypes} from '../../../common/entities/SearchQueryDTO';
 
-@Pipe({name: 'stringifySearchType'})
+@Pipe({
+    name: 'stringifySearchType',
+    standalone: true
+})
 export class StringifySearchType implements PipeTransform {
 
   transform(type: SearchQueryTypes): string {

@@ -2,7 +2,10 @@ import {Pipe, PipeTransform} from '@angular/core';
 import {FileDTO} from '../../../common/entities/FileDTO';
 import {Utils} from '../../../common/Utils';
 
-@Pipe({name: 'toPath'})
+@Pipe({
+    name: 'toPath',
+    standalone: true
+})
 export class FileDTOToPathPipe implements PipeTransform {
   transform(metaFile: FileDTO): string | null {
     if (!metaFile) {

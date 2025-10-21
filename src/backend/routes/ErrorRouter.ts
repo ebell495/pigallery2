@@ -24,18 +24,6 @@ export class ErrorRouter {
                 new ErrorDTO(ErrorCodes.NOT_AUTHENTICATED, 'Invalid token')
             );
           }
-          if (err.name === 'ForbiddenError' && err.code === 'EBADCSRFTOKEN') {
-            // jwt authentication error
-            res.status(401);
-            return next(
-                new ErrorDTO(
-                    ErrorCodes.NOT_AUTHENTICATED,
-                    'Invalid CSRF token',
-                    err,
-                    req
-                )
-            );
-          }
 
           console.log(err);
 

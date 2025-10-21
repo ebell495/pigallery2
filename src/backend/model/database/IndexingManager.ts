@@ -18,18 +18,19 @@ import {ProjectPath} from '../../ProjectPath';
 import * as path from 'path';
 import * as fs from 'fs';
 import {SearchQueryDTO} from '../../../common/entities/SearchQueryDTO';
-import {PersonEntry} from './enitites/PersonEntry';
-import {PersonJunctionTable} from './enitites/PersonJunctionTable';
+import {PersonEntry} from './enitites/person/PersonEntry';
+import {PersonJunctionTable} from './enitites/person/PersonJunctionTable';
 import {MDFileEntity} from './enitites/MDFileEntity';
 import {MDFileDTO} from '../../../common/entities/MDFileDTO';
 import {DiskManager} from '../fileaccess/DiskManager';
+import {ProjectedDirectoryCacheEntity} from './enitites/ProjectedDirectoryCacheEntity';
 
 const LOG_TAG = '[IndexingManager]';
 
 export class IndexingManager {
   SavingReady: Promise<void> = null;
   private SavingReadyPR: () => void = null;
-  private savingQueue: ParentDirectoryDTO[] = [];
+  private savingQueue: { dir: ParentDirectoryDTO; promise: Promise<void>; resolve: () => void; reject: (e: any) => void }[] = [];
   private isSaving = false;
 
   get IsSavingInProgress(): boolean {
@@ -71,45 +72,48 @@ export class IndexingManager {
    * Indexes a dir, but returns early with the scanned version,
    * does not wait for the DB to be saved
    */
-  public indexDirectory(
-    relativeDirectoryName: string
+  public async indexDirectory(
+    relativeDirectoryName: string,
+    waitForSave = false
   ): Promise<ParentDirectoryDTO> {
-    // eslint-disable-next-line no-async-promise-executor
-    return new Promise(async (resolve, reject): Promise<void> => {
-      try {
-        // Check if root is still a valid (non-empty) folder
-        // With weak devices it is possible that the media that stores
-        // the galley gets unmounted that triggers a full gallery wipe.
-        // Prevent it by stopping indexing on an empty folder.
-        if (fs.readdirSync(ProjectPath.ImageFolder).length === 0) {
-          return reject(new Error('Root directory is empty. This is probably error and would erase gallery database. Stopping indexing.'));
-        }
-
-        const scannedDirectory = await DiskManager.scanDirectory(
-          relativeDirectoryName
-        );
-
-
-        const dirClone = Utils.clone(scannedDirectory);
-        // filter server side only config from returning
-        dirClone.metaFile = dirClone.metaFile.filter(
-          (m) => !ServerPG2ConfMap[m.name]
-        );
-
-        DirectoryDTOUtils.addReferences(dirClone);
-        resolve(dirClone);
-
-        // save directory to DB
-        this.queueForSave(scannedDirectory).catch(console.error);
-      } catch (error) {
-        NotificationManager.warning(
-          'Unknown indexing error for: ' + relativeDirectoryName,
-          error.toString()
-        );
-        console.error(error);
-        return reject(error);
+    try {
+      // Check if root is still a valid (non-empty) folder
+      // With weak devices, it is possible that the media that stores
+      // the galley gets unmounted that triggers a full gallery wipe.
+      // Prevent it by stopping indexing on an empty folder.
+      if (fs.readdirSync(ProjectPath.ImageFolder).length === 0) {
+        throw new Error('Root directory is empty. This is probably error and would erase gallery database. Stopping indexing.');
       }
-    });
+
+      const scannedDirectory = await DiskManager.scanDirectory(
+        relativeDirectoryName
+      );
+
+      const dirClone = Utils.clone(scannedDirectory);
+      // filter server side only config from returning
+      dirClone.metaFile = dirClone.metaFile.filter(
+        (m) => !ServerPG2ConfMap[m.name]
+      );
+
+      DirectoryDTOUtils.addReferences(dirClone);
+
+      if (waitForSave === true) {
+        // save directory to DB and wait until saving finishes
+        await this.queueForSave(scannedDirectory);
+        return dirClone;
+      }
+
+      // save directory to DB in the background
+      this.queueForSave(scannedDirectory).catch(console.error);
+      return dirClone;
+    } catch (error) {
+      NotificationManager.warning(
+        'Unknown indexing error for: ' + relativeDirectoryName,
+        error.toString()
+      );
+      console.error(error);
+      throw error;
+    }
   }
 
   async resetDB(): Promise<void> {
@@ -149,27 +153,44 @@ export class IndexingManager {
   // Todo fix it, once typeorm support connection pools for sqlite
   /**
    * Queues up a directory to save to the DB.
+   * Returns a promise that resolves when the directory is saved.
    */
   protected async queueForSave(
     scannedDirectory: ParentDirectoryDTO
   ): Promise<void> {
-    // Is this dir  already queued for saving?
-    if (
-      this.savingQueue.findIndex(
-        (dir): boolean =>
-          dir.name === scannedDirectory.name &&
-          dir.path === scannedDirectory.path &&
-          dir.lastModified === scannedDirectory.lastModified &&
-          dir.lastScanned === scannedDirectory.lastScanned &&
-          (dir.media || dir.media.length) ===
-          (scannedDirectory.media || scannedDirectory.media.length) &&
-          (dir.metaFile || dir.metaFile.length) ===
-          (scannedDirectory.metaFile || scannedDirectory.metaFile.length)
-      ) !== -1
-    ) {
-      return;
+    // Is this dir already queued for saving?
+    const existingIndex = this.savingQueue.findIndex(
+      (entry): boolean =>
+        entry.dir.name === scannedDirectory.name &&
+        entry.dir.path === scannedDirectory.path &&
+        entry.dir.lastModified === scannedDirectory.lastModified &&
+        entry.dir.lastScanned === scannedDirectory.lastScanned &&
+        (entry.dir.media || entry.dir.media.length) ===
+        (scannedDirectory.media || scannedDirectory.media.length) &&
+        (entry.dir.metaFile || entry.dir.metaFile.length) ===
+        (scannedDirectory.metaFile || scannedDirectory.metaFile.length)
+    );
+    if (existingIndex !== -1) {
+      return this.savingQueue[existingIndex].promise;
     }
-    this.savingQueue.push(scannedDirectory);
+
+    // queue for saving
+    let resolveFn: () => void;
+    let rejectFn: (e: any) => void;
+    const promise = new Promise<void>((resolve, reject): void => {
+      resolveFn = resolve;
+      rejectFn = reject;
+    });
+
+    this.savingQueue.push({dir: scannedDirectory, promise, resolve: resolveFn, reject: rejectFn});
+    this.runSavingLoop().catch(console.error);
+
+    return promise;
+  }
+
+  protected async runSavingLoop(): Promise<void> {
+
+    // start saving if not already started
     if (!this.SavingReady) {
       this.SavingReady = new Promise<void>((resolve): void => {
         this.SavingReadyPR = resolve;
@@ -177,25 +198,40 @@ export class IndexingManager {
     }
     try {
       while (this.isSaving === false && this.savingQueue.length > 0) {
-        await this.saveToDB(this.savingQueue[0]);
+        const item = this.savingQueue[0];
+        try {
+          await this.saveToDB(item.dir);
+          item.resolve();
+        } catch (e) {
+          // reject current and remaining queued items to avoid hanging promises
+          item.reject(e);
+          this.savingQueue.shift();
+          for (const remaining of this.savingQueue) {
+            remaining.reject(e);
+          }
+          this.savingQueue = [];
+          throw e;
+        }
         this.savingQueue.shift();
       }
-    } catch (e) {
-      this.savingQueue = [];
-      throw e;
     } finally {
-      if (this.savingQueue.length === 0) {
+      if (this.savingQueue.length === 0 && this.SavingReady) {
+        const pr = this.SavingReadyPR;
         this.SavingReady = null;
-        this.SavingReadyPR();
+        if (pr) {
+          pr();
+        }
       }
     }
   }
+
 
   protected async saveParentDir(
     connection: Connection,
     scannedDirectory: ParentDirectoryDTO
   ): Promise<number> {
     const directoryRepository = connection.getRepository(DirectoryEntity);
+    const projDirCacheRep = connection.getRepository(ProjectedDirectoryCacheEntity);
 
     const currentDir: DirectoryEntity = await directoryRepository
       .createQueryBuilder('directory')
@@ -208,19 +244,13 @@ export class IndexingManager {
       // Updated parent dir (if it was in the DB previously)
       currentDir.lastModified = scannedDirectory.lastModified;
       currentDir.lastScanned = scannedDirectory.lastScanned;
-      currentDir.mediaCount = scannedDirectory.mediaCount;
-      currentDir.youngestMedia = scannedDirectory.youngestMedia;
-      currentDir.oldestMedia = scannedDirectory.oldestMedia;
       await directoryRepository.save(currentDir);
       return currentDir.id;
     } else {
       return (
         await directoryRepository.insert({
-          mediaCount: scannedDirectory.mediaCount,
           lastModified: scannedDirectory.lastModified,
           lastScanned: scannedDirectory.lastScanned,
-          youngestMedia: scannedDirectory.youngestMedia,
-          oldestMedia: scannedDirectory.oldestMedia,
           name: scannedDirectory.name,
           path: scannedDirectory.path,
         } as DirectoryEntity)

@@ -7,12 +7,18 @@ import {FacesService} from '../faces.service';
 import {AuthenticationService} from '../../../model/network/authentication.service';
 import {Config} from '../../../../../common/config/public/Config';
 import {SearchQueryTypes, TextSearch, TextSearchQueryMatchTypes,} from '../../../../../common/entities/SearchQueryDTO';
+import { NgIf } from '@angular/common';
+import { NgIconComponent } from '@ng-icons/core';
 
 @Component({
-  selector: 'app-face',
-  templateUrl: './face.component.html',
-  styleUrls: ['./face.component.css'],
-  providers: [RouterLink],
+    selector: 'app-face',
+    templateUrl: './face.component.html',
+    styleUrls: ['./face.component.css'],
+    imports: [
+        RouterLink,
+        NgIf,
+        NgIconComponent,
+    ]
 })
 export class FaceComponent implements OnInit, OnDestroy {
   @Input() person: PersonDTO;
