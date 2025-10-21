@@ -147,5 +147,8 @@
   },
   "engines": {
     "node": ">=22 <24.0"
+  },
+  "overrides": {
+    "batch-cluster": "15.0.1"
   }
 }
