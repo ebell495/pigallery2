@@ -14,6 +14,7 @@ import {QueryParams} from '../../common/QueryParams';
 import {PhotoProcessing} from '../model/fileaccess/fileprocessing/PhotoProcessing';
 import {Utils} from '../../common/Utils';
 import {ObjectManagers} from '../model/ObjectManagers';
+import { Logger } from '../Logger';
 
 declare global {
   // eslint-disable-next-line @typescript-eslint/no-namespace
@@ -72,6 +73,7 @@ export class PublicRouter {
 
     const addTPl = (req: Request, res: Response, next: NextFunction) => {
 
+      Logger.silly('[PublicRouter]','Adding template variables for ', req.path);
       res.tpl = {};
 
       res.tpl.user = null;
