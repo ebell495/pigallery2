@@ -8,16 +8,10 @@ export enum SearchQueryTypes {
 
   // non-text metadata
   // |- range types
-  from_date = 10,
-  to_date,
-  min_rating,
-  max_rating,
-  min_resolution,
-  max_resolution,
-  min_person_count,
-  max_person_count,
-  min_aspect_ratio,
-  max_aspect_ratio,
+  date = 10,
+  rating = 12,
+  resolution = 14,
+  person_count = 16,
 
   distance = 50,
   orientation,
@@ -51,103 +45,26 @@ export const TextSearchQueryTypes = [
   SearchQueryTypes.person,
   SearchQueryTypes.position,
 ];
-export const MinRangeSearchQueryTypes = [
-  SearchQueryTypes.from_date,
-  SearchQueryTypes.min_rating,
-  SearchQueryTypes.min_resolution,
-  SearchQueryTypes.min_aspect_ratio,
-];
-export const MaxRangeSearchQueryTypes = [
-  SearchQueryTypes.to_date,
-  SearchQueryTypes.max_rating,
-  SearchQueryTypes.max_resolution,
-  SearchQueryTypes.max_aspect_ratio,
+export const RangeSearchQueryTypes = [
+  SearchQueryTypes.date,
+  SearchQueryTypes.rating,
+  SearchQueryTypes.resolution,
+  SearchQueryTypes.person_count,
 ];
 
-export const RangeSearchQueryTypes = MinRangeSearchQueryTypes.concat(
-    MaxRangeSearchQueryTypes
-);
 
 export const MetadataSearchQueryTypes = [
   SearchQueryTypes.distance,
   SearchQueryTypes.orientation,
 ]
-    .concat(RangeSearchQueryTypes)
-    .concat(TextSearchQueryTypes);
+  .concat(RangeSearchQueryTypes)
+  .concat(TextSearchQueryTypes);
 
-export const rangedTypePairs: any = {};
-rangedTypePairs[SearchQueryTypes.from_date] = SearchQueryTypes.to_date;
-rangedTypePairs[SearchQueryTypes.min_rating] = SearchQueryTypes.max_rating;
-rangedTypePairs[SearchQueryTypes.min_resolution] =
-    SearchQueryTypes.max_resolution;
-rangedTypePairs[SearchQueryTypes.min_aspect_ratio] =
-    SearchQueryTypes.max_aspect_ratio;
-// add the other direction too
-for (const key of Object.keys(rangedTypePairs)) {
-  rangedTypePairs[rangedTypePairs[key]] = key;
-}
 
 export enum TextSearchQueryMatchTypes {
   exact_match = 1,
   like = 2,
 }
-
-export const SearchQueryDTOUtils = {
-  getRangedQueryPair: (type: SearchQueryTypes): SearchQueryTypes => {
-    if (rangedTypePairs[type]) {
-      return rangedTypePairs[type];
-    }
-    throw new Error('Unknown ranged type');
-  },
-  negate: (query: SearchQueryDTO): SearchQueryDTO => {
-    switch (query.type) {
-      case SearchQueryTypes.AND:
-        query.type = SearchQueryTypes.OR;
-        (query as SearchListQuery).list = (query as SearchListQuery).list.map(
-            (q) => SearchQueryDTOUtils.negate(q)
-        );
-        return query;
-      case SearchQueryTypes.OR:
-        query.type = SearchQueryTypes.AND;
-        (query as SearchListQuery).list = (query as SearchListQuery).list.map(
-            (q) => SearchQueryDTOUtils.negate(q)
-        );
-        return query;
-
-      case SearchQueryTypes.orientation:
-        (query as OrientationSearch).landscape = !(query as OrientationSearch)
-            .landscape;
-        return query;
-
-      case SearchQueryTypes.from_date:
-      case SearchQueryTypes.to_date:
-      case SearchQueryTypes.min_rating:
-      case SearchQueryTypes.max_rating:
-      case SearchQueryTypes.min_resolution:
-      case SearchQueryTypes.max_resolution:
-      case SearchQueryTypes.min_aspect_ratio:
-      case SearchQueryTypes.max_aspect_ratio:
-      case SearchQueryTypes.distance:
-      case SearchQueryTypes.any_text:
-      case SearchQueryTypes.person:
-      case SearchQueryTypes.position:
-      case SearchQueryTypes.keyword:
-      case SearchQueryTypes.caption:
-      case SearchQueryTypes.file_name:
-      case SearchQueryTypes.directory:
-        (query as NegatableSearchQuery).negate = !(
-            query as NegatableSearchQuery
-        ).negate;
-        return query;
-
-      case SearchQueryTypes.SOME_OF:
-        throw new Error('Some of not supported');
-
-      default:
-        throw new Error('Unknown type' + query.type);
-    }
-  },
-};
 
 export interface SearchQueryDTO {
   type: SearchQueryTypes;
@@ -179,80 +96,58 @@ export interface SomeOfSearchQuery extends SearchQueryDTO, SearchListQuery {
 
 export interface TextSearch extends NegatableSearchQuery {
   type:
-      | SearchQueryTypes.any_text
-      | SearchQueryTypes.person
-      | SearchQueryTypes.keyword
-      | SearchQueryTypes.position
-      | SearchQueryTypes.caption
-      | SearchQueryTypes.file_name
-      | SearchQueryTypes.directory;
+    | SearchQueryTypes.any_text
+    | SearchQueryTypes.person
+    | SearchQueryTypes.keyword
+    | SearchQueryTypes.position
+    | SearchQueryTypes.caption
+    | SearchQueryTypes.file_name
+    | SearchQueryTypes.directory;
   matchType?: TextSearchQueryMatchTypes;
-  text: string;
+  value: string;
 }
 
 export interface DistanceSearch extends NegatableSearchQuery {
   type: SearchQueryTypes.distance;
   from: {
-    text?: string;
+    value?: string;
     GPSData?: GPSMetadata;
   };
   distance: number; // in kms
 }
 
 export interface RangeSearch extends NegatableSearchQuery {
-  value: number;
+  min?: number;
+  max?: number;
 }
 
-export interface FromDateSearch extends RangeSearch {
-  type: SearchQueryTypes.from_date;
-  value: number;
-}
-
-export interface ToDateSearch extends RangeSearch {
-  type: SearchQueryTypes.to_date;
-  value: number;
-}
-
-export interface MinRatingSearch extends RangeSearch {
-  type: SearchQueryTypes.min_rating;
-  value: number;
-}
-
-export interface MaxRatingSearch extends RangeSearch {
-  type: SearchQueryTypes.max_rating;
-  value: number;
+export interface DateSearch extends RangeSearch {
+  type: SearchQueryTypes.date;
+  min?: number;
+  max?: number;
 }
 
 
-export interface MinPersonCountSearch extends RangeSearch {
-  type: SearchQueryTypes.min_person_count;
-  value: number;
+export interface RatingSearch extends RangeSearch {
+  type: SearchQueryTypes.rating;
+  min?: number;
+  max?: number;
 }
 
-export interface MaxPersonCountSearch extends RangeSearch {
-  type: SearchQueryTypes.max_person_count;
-  value: number;
+
+export interface PersonCountSearch extends RangeSearch {
+  type: SearchQueryTypes.person_count;
+  min?: number;
+  max?: number;
 }
 
-export interface MinResolutionSearch extends RangeSearch {
-  type: SearchQueryTypes.min_resolution;
-  value: number; // in megapixels
+
+export interface ResolutionSearch extends RangeSearch {
+  type: SearchQueryTypes.resolution;
+  min?: number;
+  max?: number; // in megapixels
 }
 
-export interface MaxResolutionSearch extends RangeSearch {
-  type: SearchQueryTypes.max_resolution;
-  value: number; // in megapixels
-}
-
-export interface MinAspectRatioSearch extends RangeSearch {
-  type: SearchQueryTypes.min_aspect_ratio;
-  value: number;
-}
-
-export interface MaxAspectRatioSearch extends RangeSearch {
-  type: SearchQueryTypes.max_aspect_ratio;
-  value: number;
-}
 
 export interface OrientationSearch {
   type: SearchQueryTypes.orientation;

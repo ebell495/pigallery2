@@ -15,11 +15,11 @@ import {MDFileDTO} from '../../../common/entities/MDFileDTO';
 import {MetadataLoader} from './MetadataLoader';
 import {NotificationManager} from '../NotifocationManager';
 import {ExtensionDecorator} from '../extension/ExtensionDecorator';
-import {ObjectManagers} from '../ObjectManagers';
 import {SessionManager} from '../database/SessionManager';
 
 
 const LOG_TAG = '[DiskManager]';
+declare const global: { gc: () => void };
 
 export class DiskManager {
   public static calcLastModified(stat: Stats): number {
@@ -152,7 +152,17 @@ export class DiskManager {
       return directory;
     }
     const list = await fsp.readdir(absoluteDirectoryName);
+    let count = 0;
+
     for (const file of list) {
+      count++;
+
+      if (count % 1000 === 0) {
+        if (global.gc) {
+          Logger.silly(LOG_TAG, 'Triggering gc after scanning ', count, ' files in dir: ', relativeDirectoryName);
+          global.gc();
+        }
+      }
       const fullFilePath = path.normalize(
         path.join(absoluteDirectoryName, file)
       );
@@ -277,6 +287,8 @@ export class DiskManager {
     }
 
     directory.cache.mediaCount = directory.media.length;
+    // TODO: cache is now calculated purely though DB after indexing of the directory is done.
+    // Delete is with caution (double check if it still indeed not used)
     if (!directory.isPartial) {
       directory.cache.youngestMedia = Number.MAX_SAFE_INTEGER;
       directory.cache.oldestMedia = Number.MIN_SAFE_INTEGER;

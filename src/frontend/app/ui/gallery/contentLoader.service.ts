@@ -1,57 +1,88 @@
-import {Injectable} from '@angular/core';
+import {Injectable, OnDestroy} from '@angular/core';
 import {NetworkService} from '../../model/network/network.service';
-import {ContentWrapper, ContentWrapperWithError} from '../../../../common/entities/ContentWrapper';
+import {ContentWrapperUtils, ContentWrapperWithError, PackedContentWrapperWithError} from '../../../../common/entities/ContentWrapper';
 import {SubDirectoryDTO,} from '../../../../common/entities/DirectoryDTO';
 import {GalleryCacheService} from './cache.gallery.service';
-import {BehaviorSubject, Observable} from 'rxjs';
+import {BehaviorSubject, EMPTY, from, Observable, Subject, Subscription, timer} from 'rxjs';
 import {Config} from '../../../../common/config/public/Config';
 import {ShareService} from './share.service';
-import {NavigationService} from '../../model/navigation.service';
 import {QueryParams} from '../../../../common/QueryParams';
 import {ErrorCodes} from '../../../../common/entities/Error';
-import {map} from 'rxjs/operators';
+import {filter, map, startWith, switchMap} from 'rxjs/operators';
 import {MediaDTO} from '../../../../common/entities/MediaDTO';
 import {FileDTO} from '../../../../common/entities/FileDTO';
+import {GalleryService} from './gallery.service';
+import {SearchQueryDTO} from '../../../../common/entities/SearchQueryDTO';
 
 @Injectable()
-export class ContentLoaderService {
+export class ContentLoaderService implements OnDestroy {
   public content: BehaviorSubject<ContentWrapperWithError>;
   public originalContent: Observable<DirectoryContent>;
-  lastRequest: { directory: string } = {
-    directory: null,
-  };
-  private searchId: number;
-  private ongoingSearch: string = null;
-  private currentContentRequest: { type: 'directory' | 'search', value: string } = null;
+  private ongoingContentRequest: string = null;
+  private lastContentRequest: { type: 'directory' | 'search', value: string } = null;
+  private pollingTimerRestart = new Subject<void>();
+  private pollingSub: Subscription;
 
   constructor(
     private networkService: NetworkService,
     private galleryCacheService: GalleryCacheService,
     private shareService: ShareService,
-    private navigationService: NavigationService,
+    private galleryService: GalleryService
   ) {
     this.content = new BehaviorSubject<ContentWrapperWithError>(
-      new ContentWrapperWithError()
+      {} as ContentWrapperWithError
     );
     this.originalContent = this.content.pipe(
       map((c) => (c?.directory ? c?.directory : c?.searchResult))
     );
+    this.setupAutoUpdate();
+  }
 
+  ngOnDestroy(): void {
+    this.unSubPolling();
+  }
+
+  setupAutoUpdate() {
+    this.pollingSub = this.galleryService.autoPollIntervalS.pipe(
+      switchMap(interval => {
+        if (!interval) {
+          return EMPTY; // stop polling
+        }
+
+        // Start polling or restart when pollingTimerRestart emits
+        return this.pollingTimerRestart.pipe(
+          startWith(void 0),
+          switchMap(() =>
+            timer(
+              interval * 1000,
+              interval * 1000
+            ).pipe(
+              filter(() => this.ongoingContentRequest === null),
+              switchMap(i => from(this.reloadCurrentContent()))
+            )
+          )
+        );
+      })
+    ).subscribe({
+      error: err => console.error(err)
+    });
   }
 
   setContent(content: ContentWrapperWithError): void {
+    if (ContentWrapperUtils.equals(this.content.value, content)) {
+      return;
+    }
     this.content.next(content);
   }
 
   public async loadDirectory(directoryName: string, forceReload = false): Promise<void> {
 
     // load from cache
-    const cw = this.galleryCacheService.getDirectory(directoryName);
+    let cw = this.galleryCacheService.getDirectory(directoryName);
 
-    ContentWrapper.unpack(cw);
-    this.setContent(cw);
-    this.lastRequest.directory = directoryName;
-    this.currentContentRequest = {type: 'directory', value: directoryName};
+    this.setContent(ContentWrapperUtils.unpack(cw));
+    this.ongoingContentRequest = directoryName;
+    this.lastContentRequest = {type: 'directory', value: directoryName};
 
     // prepare server request
     const params: { [key: string]: unknown } = {};
@@ -76,49 +107,49 @@ export class ContentLoaderService {
     }
 
     try {
-      const cw = await this.networkService.getJson<ContentWrapperWithError>(
+      cw = await this.networkService.getJson<PackedContentWrapperWithError>(
         '/gallery/content/' + encodeURIComponent(directoryName),
         params
       );
-
-      if (!cw || cw.notModified === true) {
-        return;
-      }
-
-      this.galleryCacheService.setDirectory(cw); // save it before adding references
-
-      if (this.lastRequest.directory !== directoryName) {
-        return;
-      }
-
-      ContentWrapper.unpack(cw);
-
-      this.setContent(cw);
     } catch (e) {
       console.error(e);
-      this.navigationService.toGallery().catch(console.error);
     }
+    if (this.ongoingContentRequest !== directoryName) {
+      return;
+    }
+    this.ongoingContentRequest = null;
+    this.pollingTimerRestart.next();
+
+    if (!cw || cw.notModified === true) {
+      return;
+    }
+
+    if(!!cw?.directory) {
+      this.galleryCacheService.setDirectory(cw); // save it before adding references
+    }
+    this.setContent(ContentWrapperUtils.unpack(cw));
+
   }
 
-  public async search(query: string, forceReload = false): Promise<void> {
-    if (this.searchId != null) {
-      clearTimeout(this.searchId);
+  public async search(query: SearchQueryDTO, forceReload = false): Promise<void> {
+    const queryStr = JSON.stringify(query);
+    this.ongoingContentRequest = queryStr;
+    this.lastContentRequest = {type: 'search', value: queryStr};
+
+    if (!forceReload) {
+      this.setContent({} as PackedContentWrapperWithError); // don't empty the page when its just a reload
     }
 
-    this.ongoingSearch = query;
-    this.currentContentRequest = {type: 'search', value: query};
-
-    this.setContent(new ContentWrapperWithError());
-    let cw = this.galleryCacheService.getSearch(JSON.parse(query));
+    let cw = this.galleryCacheService.getSearch(query);
     if (forceReload || (!cw || cw.searchResult == null)) {
       try {
-        cw = await this.networkService.getJson<ContentWrapperWithError>('/search/' + encodeURIComponent(query));
+        cw = await this.networkService.getJson<PackedContentWrapperWithError>('/search/' + encodeURIComponent(queryStr));
         this.galleryCacheService.setSearch(cw);
       } catch (e) {
         cw = cw || {
           directory: null,
           searchResult: null
-        };
+        } as PackedContentWrapperWithError;
         if (e.code === ErrorCodes.LocationLookUp_ERROR) {
           cw.error = $localize`Cannot find location` + ': ' + e.message;
         } else {
@@ -127,12 +158,13 @@ export class ContentLoaderService {
       }
     }
 
-    if (this.ongoingSearch !== query) {
+    if (this.ongoingContentRequest !== queryStr) {
       return;
     }
+    this.ongoingContentRequest = null;
+    this.pollingTimerRestart.next();
 
-    ContentWrapper.unpack(cw);
-    this.setContent(cw);
+    this.setContent(ContentWrapperUtils.unpack(cw));
   }
 
   isSearchResult(): boolean {
@@ -140,14 +172,22 @@ export class ContentLoaderService {
   }
 
   public async reloadCurrentContent(): Promise<void> {
-    if (!this.currentContentRequest) {
+    if (!this.lastContentRequest) {
       return;
     }
 
-    if (this.currentContentRequest.type === 'directory') {
-      await this.loadDirectory(this.currentContentRequest.value, true);
-    } else if (this.currentContentRequest.type === 'search') {
-      await this.search(this.currentContentRequest.value, true);
+    if (this.lastContentRequest.type === 'directory') {
+      await this.loadDirectory(this.lastContentRequest.value, true);
+    } else if (this.lastContentRequest.type === 'search') {
+      await this.search(JSON.parse(this.lastContentRequest.value), true);
+    }
+  }
+
+  private unSubPolling() {
+
+    if (this.pollingSub) {
+      this.pollingSub.unsubscribe();
+      this.pollingSub = null;
     }
   }
 }

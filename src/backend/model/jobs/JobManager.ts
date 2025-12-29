@@ -18,11 +18,6 @@ export class JobManager implements IJobListener, IObjectManager {
   protected timers: { schedule: JobScheduleDTO; timer: NodeJS.Timeout }[] = [];
   protected progressManager: JobProgressManager = null;
 
-  async init(){
-    this.progressManager = new JobProgressManager();
-    this.runSchedules();
-  }
-
   protected get JobRunning(): boolean {
     return (
       JobRepository.Instance.getAvailableJobs().findIndex(
@@ -37,6 +32,11 @@ export class JobManager implements IJobListener, IObjectManager {
         (j): boolean => j.InProgress === true && j.allowParallelRun
       ) !== -1
     );
+  }
+
+  async init() {
+    this.progressManager = new JobProgressManager();
+    this.runSchedules();
   }
 
   public getProgresses(): { [id: string]: OnTimerJobProgressDTO } {
@@ -156,7 +156,6 @@ export class JobManager implements IJobListener, IObjectManager {
       new Date(),
       schedule
     );
-    Logger.info(LOG_TAG, 'Next run for ' + schedule.jobName + ' is ' + nextDate);
     if (nextDate && nextDate.getTime() > Date.now()) {
       Logger.debug(
         LOG_TAG,
@@ -168,12 +167,19 @@ export class JobManager implements IJobListener, IObjectManager {
 
       const timer: NodeJS.Timeout = setTimeout(async (): Promise<void> => {
         this.timers = this.timers.filter((t): boolean => t.timer !== timer);
-        await this.run(
-          schedule.jobName,
-          schedule.config,
-          false,
-          schedule.allowParallelRun
-        );
+        try {
+          await this.run(
+            schedule.jobName,
+            schedule.config,
+            false,
+            schedule.allowParallelRun
+          );
+        } catch (e) {
+          NotificationManager.warning(
+            'Job running error:' + schedule.name,
+            e.toString()
+          );
+        }
         this.runSchedule(schedule);
       }, nextDate.getTime() - Date.now());
       this.timers.push({schedule, timer});

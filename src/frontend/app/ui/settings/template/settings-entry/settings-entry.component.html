@@ -38,7 +38,7 @@
             [name]="idName"
             [disabled]="state.readonly || Disabled"
             [id]="idName"
-            required="required">
+            required="true">
           <span class="input-group-text"
                 *ngIf="state.tags?.unit && !this.state.tags?.uiOptions">{{state.tags?.unit}}</span>
         </div>
@@ -122,7 +122,7 @@
                   <button class="btn btn-primary" type="button"
                           (click)="addNewTheme()">
                     <ng-icon name="ionAddOutline" class="me-1"></ng-icon>
-                    <ng-container i18n>Add new Theme</ng-container>
+                    <ng-container i18n>Add new theme</ng-container>
                   </button>
                 </div>
               </div>

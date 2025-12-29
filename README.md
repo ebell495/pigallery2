@@ -1,10 +1,7 @@
 # PiGallery2 
 ![GitHub package.json version](https://img.shields.io/github/package-json/v/bpatrik/pigallery2)
-[![Language grade: JavaScript](https://img.shields.io/lgtm/grade/javascript/g/bpatrik/pigallery2.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/bpatrik/pigallery2/context:javascript)
-[![Build Status](https://travis-ci.org/bpatrik/pigallery2.svg?branch=master)](https://travis-ci.org/bpatrik/pigallery2)
 [![Coverage Status](https://coveralls.io/repos/github/bpatrik/pigallery2/badge.svg?branch=master)](https://coveralls.io/github/bpatrik/pigallery2?branch=master)
 [![Docker build](https://github.com/bpatrik/pigallery2/workflows/docker-buildx/badge.svg)](https://github.com/bpatrik/pigallery2/actions)
-[![dependencies Status](https://david-dm.org/bpatrik/pigallery2/status.svg)](https://david-dm.org/bpatrik/pigallery2)
  
 
 Homepage: http://bpatrik.github.io/pigallery2/
@@ -53,7 +50,7 @@ As an alternative, you can also directly [install Node.js](https://www.scaler.co
 ### 1.2.0 [Install Node.js](https://nodejs.org/en/download/)
 Download and extract
 ```bash
-curl -sL https://deb.nodesource.com/setup_12.x | sudo -E bash -
+curl -sL https://deb.nodesource.com/setup_22.x | sudo -E bash -
 sudo apt-get install -y nodejs
 ```
 
@@ -64,7 +61,7 @@ Full node install on raspberry pi description: https://www.w3schools.com/nodejs/
 
 ```bash
 cd ~
-wget https://github.com/bpatrik/pigallery2/releases/download/1.9.0/pigallery2-release.zip
+wget https://github.com/bpatrik/pigallery2/releases/download/3.0.0/pigallery2-release.zip
 unzip pigallery2-release.zip -d pigallery2
 cd pigallery2
 npm install
@@ -179,7 +176,10 @@ and it also does not cost anything to me :)
 There is [no way to donate](https://github.com/bpatrik/pigallery2/discussions/328#discussioncomment-894546) to this project at the moment. And I'm also not planning on monetizing it.
 But it warms my hearth [seeing that it is useful for some people](docs/references/README.md). 
 
+## 6. Star History
 
-## 6. Credits
+[![Star History Chart](https://api.star-history.com/svg?repos=bpatrik/pigallery2&type=date&legend=top-left)](https://www.star-history.com/#bpatrik/pigallery2&type=date&legend=top-left)
+
+## 7. Credits
 Crossbrowser testing sponsored by [Browser Stack](https://www.browserstack.com)
 [<img src="https://camo.githubusercontent.com/a7b268f2785656ab3ca7b1cbb1633ee5affceb8f/68747470733a2f2f64677a6f7139623561736a67312e636c6f756466726f6e742e6e65742f70726f64756374696f6e2f696d616765732f6c61796f75742f6c6f676f2d6865616465722e706e67" alt="Browser Stack" height="31px" style="background: cornflowerblue;">](https://www.browserstack.com)

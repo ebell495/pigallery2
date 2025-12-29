@@ -1,6 +1,6 @@
 import {ComponentFixture, TestBed} from '@angular/core/testing';
 import {ActivatedRoute, provideRouter} from '@angular/router';
-import {BehaviorSubject, of} from 'rxjs';
+import {BehaviorSubject, Observable, of} from 'rxjs';
 import {ChangeDetectorRef} from '@angular/core';
 import {provideHttpClient, withInterceptorsFromDi} from '@angular/common/http';
 import {provideHttpClientTesting} from '@angular/common/http/testing';
@@ -30,11 +30,12 @@ import {GalleryNavigatorService} from './navigator/navigator.service';
 import {MediaButtonModalService} from './grid/photo/media-button-modal/media-button-modal.service';
 import {SortingMethod} from '../../../../common/entities/SortingMethods';
 import {SearchQueryParserService} from './search/search-query-parser.service';
+import {BlogService, GroupedMarkdown} from './blog/blog.service';
 
 
 // Mock services
 class MockContentLoaderService {
-  content = new BehaviorSubject<ContentWrapperWithError>(new ContentWrapperWithError());
+  content = new BehaviorSubject<ContentWrapperWithError>({} as ContentWrapperWithError);
   loadDirectory = jasmine.createSpy('loadDirectory');
   search = jasmine.createSpy('search').and.returnValue(Promise.resolve());
 
@@ -83,6 +84,13 @@ class MockCacheService {
   setThemeMode() {
   }
 }
+
+class MockBlogService{
+  getMarkDowns(date: Date): Observable<GroupedMarkdown[]>{
+    return of([]);
+  }
+}
+
 
 class MockGallerySortingService {
   sorting = new BehaviorSubject({} as SortingMethod);
@@ -142,6 +150,7 @@ describe('GalleryComponent', () => {
         {provide: GallerySortingService, useClass: MockGallerySortingService},
         {provide: PiTitleService, useClass: MockPiTitleService},
         {provide: GPXFilesFilterPipe, useClass: MockGPXFilesFilterPipe},
+        {provide: BlogService, useClass: MockBlogService},
         {provide: MDFilesFilterPipe, useClass: MockMDFilesFilterPipe},
         {provide: FullScreenService, useValue: jasmine.createSpyObj('FullScreenService', ['mock'])},
         {provide: OverlayService, useValue: jasmine.createSpyObj('OverlayService', ['mock'])},
@@ -149,7 +158,7 @@ describe('GalleryComponent', () => {
         {provide: NotificationService, useValue: jasmine.createSpyObj('NotificationService ', ['mock'])},
         {
           provide: GalleryNavigatorService, useValue: jasmine.createSpyObj('GalleryNavigatorService ', [], {
-            isDefaultGridSize: ()=>true,
+            isDefaultGridSize: () => true,
             girdSize: {
               subscribe: () => {
               },
@@ -166,7 +175,7 @@ describe('GalleryComponent', () => {
             }
           })
         },
-        {provide: SearchQueryParserService, useValue: jasmine.createSpyObj('SearchQueryParserService', [],{stringify:()=>''})},
+        {provide: SearchQueryParserService, useValue: jasmine.createSpyObj('SearchQueryParserService', [], {stringify: () => ''})},
         {
           provide: ActivatedRoute,
           useValue: {
@@ -202,7 +211,7 @@ describe('GalleryComponent', () => {
 
   describe('ContentWrapper getter', () => {
     it('should return the current content from contentLoader', () => {
-      const testContent = new ContentWrapperWithError();
+      const testContent = {} as ContentWrapperWithError;
       testContent.directory = {name: 'test', path: 'test'} as any;
       mockContentLoader.content.next(testContent);
 
@@ -268,7 +277,7 @@ describe('GalleryComponent', () => {
     });
 
     it('should show main content when ContentWrapper is not null', () => {
-      const contentWrapper = new ContentWrapperWithError();
+      const contentWrapper = {} as ContentWrapperWithError;
       contentWrapper.directory = {name: 'test', path: 'test'} as any;
       mockContentLoader.content.next(contentWrapper);
       fixture.detectChanges();
@@ -281,7 +290,7 @@ describe('GalleryComponent', () => {
 
   describe('error handling', () => {
     it('should display error message when ContentWrapper has error', () => {
-      const contentWrapper = new ContentWrapperWithError();
+      const contentWrapper = {} as ContentWrapperWithError;
       contentWrapper.error = 'Test error message';
       mockContentLoader.content.next(contentWrapper);
       fixture.detectChanges();
@@ -293,7 +302,7 @@ describe('GalleryComponent', () => {
     });
 
     it('should not show error alert when there is no error', () => {
-      const contentWrapper = new ContentWrapperWithError();
+      const contentWrapper = {} as ContentWrapperWithError;
       contentWrapper.directory = {name: 'test', path: 'test'} as any;
       mockContentLoader.content.next(contentWrapper);
       fixture.detectChanges();
@@ -306,7 +315,7 @@ describe('GalleryComponent', () => {
 
   describe('content display', () => {
     it('should show directory content when available', () => {
-      const contentWrapper = new ContentWrapperWithError();
+      const contentWrapper = {} as ContentWrapperWithError;
       contentWrapper.directory = {
         name: 'test',
         path: 'test',
@@ -330,7 +339,7 @@ describe('GalleryComponent', () => {
     });
 
     it('should show search result when available', () => {
-      const contentWrapper = new ContentWrapperWithError();
+      const contentWrapper = {} as ContentWrapperWithError;
       contentWrapper.searchResult = {
         media: [],
         directories: [],
@@ -345,7 +354,7 @@ describe('GalleryComponent', () => {
     });
 
     it('should show search result overflow warning when applicable', () => {
-      const contentWrapper = new ContentWrapperWithError();
+      const contentWrapper = {} as ContentWrapperWithError;
       contentWrapper.searchResult = {
         media: [],
         directories: [],
@@ -363,7 +372,7 @@ describe('GalleryComponent', () => {
 
   describe('spinner display', () => {
     it('should show spinner when directory is partial', () => {
-      const contentWrapper = new ContentWrapperWithError();
+      const contentWrapper = {} as ContentWrapperWithError;
       contentWrapper.directory = {
         name: 'test',
         path: 'test',
@@ -378,7 +387,7 @@ describe('GalleryComponent', () => {
     });
 
     it('should not show spinner when directory is complete', () => {
-      const contentWrapper = new ContentWrapperWithError();
+      const contentWrapper = {} as ContentWrapperWithError;
       contentWrapper.directory = {
         name: 'test',
         path: 'test',
@@ -393,7 +402,7 @@ describe('GalleryComponent', () => {
     });
 
     it('should not show spinner when there is an error', () => {
-      const contentWrapper = new ContentWrapperWithError();
+      const contentWrapper = {} as ContentWrapperWithError;
       contentWrapper.error = 'Test error';
       mockContentLoader.content.next(contentWrapper);
       fixture.detectChanges();
@@ -404,7 +413,7 @@ describe('GalleryComponent', () => {
     });
 
     it('should not show spinner when there is search result', () => {
-      const contentWrapper = new ContentWrapperWithError();
+      const contentWrapper = {} as ContentWrapperWithError;
       contentWrapper.searchResult = {
         media: [],
         directories: [],

@@ -17,6 +17,7 @@ import {DurationPipe} from '../../../../pipes/DurationPipe';
 import {SafeHtmlPipe} from '../../../../pipes/SafeHTMLPipe';
 import {IClientMediaButtonConfig} from '../../../../../../common/entities/extension/IClientUIConfig';
 import {Utils} from '../../../../../../common/Utils';
+import {SearchQueryUtils} from '../../../../../../common/SearchQueryUtils';
 
 export interface IClientMediaButtonConfigWithBaseApiPath extends IClientMediaButtonConfig {
   extensionBasePath: string;
@@ -109,7 +110,50 @@ export class GalleryPhotoComponent implements IRenderable, OnInit, OnDestroy {
       if (this.gridMedia.isPhoto() && button.skipPhotos) {
         return false;
       }
+
+      // Check metadataFilter
+      if (button.metadataFilter && button.metadataFilter.length > 0) {
+        return this.matchesMetadataFilter(button.metadataFilter);
+      }
+
       return true;
+    });
+
+    // move always visible buttons to the front
+    this.mediaButtons = [...this.mediaButtons.filter(b => b.alwaysVisible), ...this.mediaButtons.filter(b => !b.alwaysVisible)];
+  }
+
+  matchesMetadataFilter(filters: { field: string, comparator: '>=' | '<=' | '==', value: string | number }[]): boolean {
+    const metadata = this.gridMedia.media.metadata;
+
+    // All filters must match (AND logic)
+    return filters.every(filter => {
+      // Get the value from metadata using the field path (e.g., 'rating' or 'size.width')
+      const fieldParts = filter.field.split('.');
+      let fieldValue: any = metadata;
+
+      for (const part of fieldParts) {
+        if (fieldValue === undefined || fieldValue === null) {
+          return false;
+        }
+        fieldValue = fieldValue[part];
+      }
+
+      if (fieldValue === undefined || fieldValue === null) {
+        return false;
+      }
+
+      // Compare based on comparator
+      switch (filter.comparator) {
+        case '>=':
+          return fieldValue >= filter.value;
+        case '<=':
+          return fieldValue <= filter.value;
+        case '==':
+          return fieldValue == filter.value; // Use == for loose equality
+        default:
+          return false;
+      }
     });
   }
 
@@ -175,18 +219,18 @@ export class GalleryPhotoComponent implements IRenderable, OnInit, OnDestroy {
   }
 
   getPositionSearchQuery(): string {
-    return JSON.stringify({
+    return SearchQueryUtils.urlify({
       type: SearchQueryTypes.position,
       matchType: TextSearchQueryMatchTypes.exact_match,
-      text: this.getPositionText(),
+      value: this.getPositionText(),
     } as TextSearch);
   }
 
   getTextSearchQuery(name: string, type: SearchQueryTypes): string {
-    return JSON.stringify({
+    return SearchQueryUtils.urlify({
       type,
       matchType: TextSearchQueryMatchTypes.exact_match,
-      text: name,
+      value: name,
     } as TextSearch);
   }
 
@@ -223,6 +267,10 @@ export class GalleryPhotoComponent implements IRenderable, OnInit, OnDestroy {
     event.stopPropagation();
     event.preventDefault();
 
+    if(!button.apiPath){
+      return; // this is a fake button, nothing to call
+    }
+
     if (button.popup) {
       this.modalService.showModal(button, this.gridMedia);
     } else {
@@ -231,7 +279,7 @@ export class GalleryPhotoComponent implements IRenderable, OnInit, OnDestroy {
   }
 
   public getDimension(): Dimension {
-    if (!this.imageRef) {
+    if (!this.imageRef?.nativeElement?.offsetParent) {
       return {
         top: 0,
         left: 0,

@@ -116,7 +116,7 @@ export class MediaMetadataEntity implements MediaMetadata {
   creationDateOffset?: string;
 
 
-  @Column('int', {unsigned: true})
+  @Column('bigint', {unsigned: true, transformer: {from: (v) => v == null ? null : parseInt(v, 10), to: (v) => v}})
   fileSize: number;
 
   @Column({

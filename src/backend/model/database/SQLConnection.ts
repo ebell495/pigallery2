@@ -149,10 +149,12 @@ export class SQLConnection {
       defAdmin &&
       PasswordHelper.comparePassword('admin', defAdmin.password)
     ) {
-      NotificationManager.error(
-        'Using default admin user!',
-        'You are using the default admin/admin user/password, please change or remove it.'
-      );
+      if (!Config.Users.suppressDefUserWarn) {
+        NotificationManager.error(
+          'Using default admin user!',
+          'You are using the default user: "admin", password: "admin". The is a security issue. Please change the password or remove the user.'
+        );
+      }
     }
   }
 
@@ -193,7 +195,7 @@ export class SQLConnection {
   }
 
   public static getSQLiteDB(config: ServerDataBaseConfig): string {
-    return path.join(ProjectPath.getAbsolutePath(config.dbFolder), 'sqlite.db');
+    return path.join(ProjectPath.getAbsolutePath(config.dbFolder), Config.Database.sqlite.DBFileName);
   }
 
   private static async createConnection(

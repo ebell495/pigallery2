@@ -3,6 +3,7 @@
   overflow: hidden;
   transition: scale .3s ease-out;
 }
+
 :host:hover {
   scale: 98%;
 }
@@ -19,8 +20,8 @@ img {
   vertical-align: unset;
 }
 
-img.loading{
-  background: var(--item-background) ;
+img.loading {
+  background: var(--item-background);
 }
 
 @keyframes fadein {
@@ -194,11 +195,19 @@ a {
   fill: white;
 }
 
-.photo-container:hover .media-buttons {
+.photo-container:hover .media-button {
   opacity: 1;
 }
 
-.media-buttons {
+.media-button {
   opacity: 0;
   transition: opacity .3s ease-out;
+}
+
+.media-button.always-visible {
+  opacity: 1;
+}
+
+.no-click {
+  cursor: auto;
 }

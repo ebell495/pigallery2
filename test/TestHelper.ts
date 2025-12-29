@@ -7,7 +7,7 @@ import {
 import {PhotoEntity, PhotoMetadataEntity} from '../src/backend/model/database/enitites/PhotoEntity';
 import {DirectoryEntity} from '../src/backend/model/database/enitites/DirectoryEntity';
 import {VideoEntity, VideoMetadataEntity} from '../src/backend/model/database/enitites/VideoEntity';
-import {MediaDimension, MediaDTO} from '../src/common/entities/MediaDTO';
+import {MediaDimension, MediaDTO, RatingTypes} from '../src/common/entities/MediaDTO';
 import {
   CameraMetadata,
   CoverPhotoDTO,
@@ -197,6 +197,9 @@ export class TestHelper {
       box: {height: 10, width: 10, left: 103, top: 103},
       name: 'Han Solo'
     } as FaceRegion, {
+      box: {height: 10, width: 10, left: 101, top: 101},
+      name: 'Anakin Skywalker'
+    } as FaceRegion, {
       box: {height: 10, width: 10, left: 104, top: 104},
       name: 'Unkle Ben'
     } as FaceRegion, {
@@ -360,7 +363,7 @@ export class TestHelper {
     return f;
   }
 
-  public static getRandomizedPhotoEntry(dir: DirectoryBaseDTO, forceStr: string = null, faces = 2, rating?: number): PhotoDTO {
+  public static getRandomizedPhotoEntry(dir: DirectoryBaseDTO, forceStr: string = null, faces = 2, rating?: RatingTypes): PhotoDTO {
 
 
     const rndStr = (): string => {
@@ -404,7 +407,7 @@ export class TestHelper {
       creationDateOffset: '+01:00',
       fileSize: rndInt(10000),
       caption: rndStr(),
-      rating: rating ?? rndInt(5) as any
+      ...(!isNaN(rating) && {rating})
     };
 
 
@@ -439,12 +442,12 @@ export class TestHelper {
       dir.media.length > 0
         ? (dir.media as CoverPhotoDTO[]).slice()
         : dir.directories
-            .filter((d): boolean => !!d.cache?.cover)
-            .map((d): CoverPhotoDTO => {
-              // Make sure cover has correct directory reference
-              d.cache.cover.directory = d;
-              return d.cache.cover;
-            });
+          .filter((d): boolean => !!d.cache?.cover)
+          .map((d): CoverPhotoDTO => {
+            // Make sure cover has correct directory reference
+            d.cache.cover.directory = d;
+            return d.cache.cover;
+          });
 
     // Sort cover candidates by configured method
     const sortBy = Config.AlbumCover.Sorting[0].method;

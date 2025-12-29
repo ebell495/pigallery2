@@ -9,12 +9,10 @@ import {CookieNames} from '../../common/CookieNames';
 import {ErrorCodes, ErrorDTO} from '../../common/entities/Error';
 import {UserDTO} from '../../common/entities/UserDTO';
 import {ServerTimeEntry} from '../middlewares/ServerTimingMWs';
-import {ClientConfig, TAGS} from '../../common/config/public/ClientConfig';
 import {QueryParams} from '../../common/QueryParams';
 import {PhotoProcessing} from '../model/fileaccess/fileprocessing/PhotoProcessing';
 import {Utils} from '../../common/Utils';
 import {ObjectManagers} from '../model/ObjectManagers';
-import { Logger } from '../Logger';
 
 declare global {
   // eslint-disable-next-line @typescript-eslint/no-namespace
@@ -73,7 +71,6 @@ export class PublicRouter {
 
     const addTPl = (req: Request, res: Response, next: NextFunction) => {
 
-      Logger.silly('[PublicRouter]','Adding template variables for ', req.path);
       res.tpl = {};
 
       res.tpl.user = null;
@@ -87,11 +84,7 @@ export class PublicRouter {
         } as UserDTO;
 
       }
-      const confCopy = Config.toJSON({
-        attachVolatile: true,
-        skipTags: {secret: true} as TAGS,
-        keepTags: {client: true}
-      }) as unknown as ClientConfig;
+      const confCopy = Config.getClientConfig();
       // Escaping html tags, like <script></script>
       confCopy.Server.customHTMLHead =
         confCopy.Server.customHTMLHead
