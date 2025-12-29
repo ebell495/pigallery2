@@ -40,11 +40,13 @@ export class NavigationService {
           case NavigationLinkTypes.gallery:
             return this.router.navigate(['gallery', '']);
           case NavigationLinkTypes.albums:
-            return this.router.navigate(['albums', '']);
+            return this.router.navigate(['albums']);
           case NavigationLinkTypes.faces:
-            return this.router.navigate(['faces', '']);
+            return this.router.navigate(['faces']);
           case NavigationLinkTypes.search:
             return this.router.navigate(['search', JSON.stringify(Config.Gallery.NavBar.links[0].SearchQuery)]);
+          default:
+            console.error('nowhere to navigate.');
         }
       }
 

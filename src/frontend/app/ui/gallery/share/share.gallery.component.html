@@ -37,8 +37,8 @@
             id="getShareButton" name="getShareButton"
             (click)="share()"
             [disabled]="!shareForm.form.valid"
-            class="btn btn-primary btn-block float-end" i18n>Share
-          </button>
+            class="btn btn-primary btn-block float-end"
+            i18n>Share</button>
           <button
             *ngIf="sharing"
             id="copyButton" name="copyButton"
@@ -46,8 +46,8 @@
             [cbContent]="url"
             (cbOnSuccess)="onCopy()"
             [disabled]="!shareForm.form.valid"
-            class="btn btn-primary btn-block float-end" i18n>Copy
-          </button>
+            class="btn btn-primary btn-block float-end"
+            i18n>Copy</button>
         </div>
       </div>
       <hr/>
@@ -140,9 +140,9 @@
       </thead>
       <tbody>
       <tr *ngFor="let share of activeShares">
-        <td><a [href]="sharingService.getUrl(share)">{{ share.sharingKey }}</a></td>
-        <td *ngIf="IsAdmin">{{ share.creator.name }}</td>
-        <td>{{ share.expires | date }}</td>
+        <td class="ellipsisContainer"><a [href]="sharingService.getUrl(share)" class="ellipsisText">{{share.sharingKey}}</a></td>
+        <td *ngIf="IsAdmin">{{share.creator.name}}</td>
+        <td>{{share.expires | date}}</td>
         <td>
           <button (click)="deleteSharing(share)"
                   [disabled]="share.sharingKey == sharing?.sharingKey"

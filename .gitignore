@@ -44,10 +44,6 @@ test2.*
 .nyc_output/
 .vscode*
 !test/setup-local.js  # Excludes setup.js from the ignore rule
-images1
-images
-demo/
-pigallery2-release/
 /demo/tmp2/
 /demo/tmp33asd/
 /demo/images2/
@@ -63,3 +59,4 @@ pigallery2-release/
 /docs/index.html.js*
 /bm_config.json
 /cypress.env.json
+/wiki/

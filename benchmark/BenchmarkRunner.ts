@@ -12,7 +12,7 @@ import {IndexingJob} from '../src/backend/model/jobs/jobs/IndexingJob';
 import {IJob} from '../src/backend/model/jobs/jobs/IJob';
 import {JobProgressStates} from '../src/common/entities/job/JobProgressDTO';
 import {JobProgress} from '../src/backend/model/jobs/jobs/JobProgress';
-import {ContentWrapper} from '../src/common/entities/ContentWrapper';
+import {ContentWrapper, ContentWrapperUtils} from '../src/common/entities/ContentWrapper';
 import {GalleryManager} from '../src/backend/model/database/GalleryManager';
 import {PersonManager} from '../src/backend/model/database/PersonManager';
 import {GalleryRouter} from '../src/backend/routes/GalleryRouter';
@@ -114,7 +114,7 @@ export class BenchmarkRunner {
       });
     bm.addAStep({
       name: 'Scanning directory',
-      fn: async (): Promise<ContentWrapper> => new ContentWrapper(await DiskManager.scanDirectory(this.biggestDirPath))
+      fn: async (): Promise<ContentWrapper> => ContentWrapperUtils.build(await DiskManager.scanDirectory(this.biggestDirPath))
     });
     return await bm.run(this.RUNS);
   }
@@ -165,15 +165,15 @@ export class BenchmarkRunner {
     // searching for everything
     queries.push({
       query: {
-        type: SearchQueryTypes.any_text, text: '.'
+        type: SearchQueryTypes.any_text, value: '.'
       } as TextSearch, description: queryParser.stringify({
-        type: SearchQueryTypes.any_text, text: '.'
+        type: SearchQueryTypes.any_text, value: '.'
       } as TextSearch)
     });
     if (names.length > 0) {
       queries.push({
         query: {
-          type: SearchQueryTypes.person, text: names[0].name,
+          type: SearchQueryTypes.person, value: names[0].name,
           matchType: TextSearchQueryMatchTypes.exact_match
         } as TextSearch, description: '<Most common name>'
       });
@@ -183,11 +183,11 @@ export class BenchmarkRunner {
         query: {
           type: SearchQueryTypes.AND, list: [
             {
-              type: SearchQueryTypes.person, text: names[0].name,
+              type: SearchQueryTypes.person, value: names[0].name,
               matchType: TextSearchQueryMatchTypes.exact_match
             } as TextSearch,
             {
-              type: SearchQueryTypes.person, text: names[1].name,
+              type: SearchQueryTypes.person, value: names[1].name,
               matchType: TextSearchQueryMatchTypes.exact_match
             } as TextSearch
           ]
@@ -197,11 +197,11 @@ export class BenchmarkRunner {
         query: {
           type: SearchQueryTypes.OR, list: [
             {
-              type: SearchQueryTypes.person, text: names[0].name,
+              type: SearchQueryTypes.person, value: names[0].name,
               matchType: TextSearchQueryMatchTypes.exact_match
             } as TextSearch,
             {
-              type: SearchQueryTypes.person, text: names[1].name,
+              type: SearchQueryTypes.person, value: names[1].name,
               matchType: TextSearchQueryMatchTypes.exact_match
             } as TextSearch
           ]
@@ -212,7 +212,7 @@ export class BenchmarkRunner {
           type: SearchQueryTypes.SOME_OF,
           min: 2,
           list: names.map(n => ({
-            type: SearchQueryTypes.person, text: n.name,
+            type: SearchQueryTypes.person, value: n.name,
             matchType: TextSearchQueryMatchTypes.exact_match
           } as TextSearch))
         } as SomeOfSearchQuery, description: '<Contain at least 2 out of all names>'

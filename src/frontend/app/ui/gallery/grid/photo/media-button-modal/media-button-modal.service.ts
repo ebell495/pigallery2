@@ -44,6 +44,9 @@ export class MediaButtonModalService {
 
   async executeButtonAction(button: IClientMediaButtonConfigWithBaseApiPath, media: GridMedia, formData?: any): Promise<void> {
     try {
+      if (!button.apiPath) {
+        return; // this is a fake button, nothing to call
+      }
       // Construct the full API path using base path and button's API path
       const apiPath = Utils.concatUrls(button.extensionBasePath, button.apiPath);
 
@@ -61,7 +64,7 @@ export class MediaButtonModalService {
 
     } catch (error) {
       // Show error notification
-      this.notificationService.error($localize`Action failed: ${error.message || error}`);
+      this.notificationService.error($localize`Action failed:` + (error.message || error));
       console.error('Media button action failed:', error);
     }
 

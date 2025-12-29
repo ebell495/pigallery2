@@ -131,16 +131,14 @@ export class GalleryLightboxComponent implements OnDestroy, OnInit {
         const validPhoto = params[QueryParams.gallery.photo] &&
           params[QueryParams.gallery.photo] !== '';
 
-
-        if (params[QueryParams.gallery.playback]) {
+        if (params[QueryParams.gallery.lightbox.playback]) {
           this.runSlideShow();
         } else {
           this.stopSlideShow();
         }
 
         this.delayedMediaShow = null;
-        if (validPhoto
-        ) {
+        if (validPhoto) {
           this.delayedMediaShow = params[QueryParams.gallery.photo];
           // photos are not yet available to show
           if (!this.gridPhotoQL) {
@@ -174,33 +172,6 @@ export class GalleryLightboxComponent implements OnDestroy, OnInit {
     }
   }
 
-  onNavigateTo(photoStringId: string): string {
-    if (
-      this.activePhoto &&
-      this.queryService.getMediaStringId(this.activePhoto.gridMedia.media) ===
-      photoStringId
-    ) {
-      return;
-    }
-
-    if (this.controls) {
-      this.controls.resetZoom();
-    }
-    const photo = this.gridPhotoQL.find(
-      (i): boolean =>
-        this.queryService.getMediaStringId(i.gridMedia.media) === photoStringId
-    );
-    if (!photo) {
-      return (this.delayedMediaShow = photoStringId);
-    }
-    if (this.status === LightboxStates.Closed) {
-      this.showLigthbox(photo.gridMedia.media);
-    } else {
-      this.showPhoto(this.gridPhotoQL.toArray().indexOf(photo));
-    }
-    this.delayedMediaShow = null;
-  }
-
   setGridPhotoQL(value: QueryList<GalleryPhotoComponent>): void {
     if (this.subscription.photosChange != null) {
       this.subscription.photosChange.unsubscribe();
@@ -208,11 +179,21 @@ export class GalleryLightboxComponent implements OnDestroy, OnInit {
     this.gridPhotoQL = value;
     this.subscription.photosChange = this.gridPhotoQL.changes.subscribe(
       (): void => {
-        if (
-          this.activePhotoId != null &&
-          this.gridPhotoQL.length > this.activePhotoId
-        ) {
-          this.updateActivePhoto(this.activePhotoId);
+        if (this.activePhoto) {
+          const id = this.queryService.getMediaStringId(this.activePhoto.gridMedia.media);
+          const index = this.gridPhotoQL.toArray().findIndex(p =>
+            this.queryService.getMediaStringId(p.gridMedia.media) === id
+          );
+          // make sure that currently shown media has uses the right index.
+          if (index !== -1) {
+            this.activePhotoId = index;
+            this.updateActivePhoto(this.activePhotoId);
+            // if the photo is not available anymore, navigate to the first one.
+          } else if (this.gridPhotoQL.length > 0) {
+            if (this.status === LightboxStates.Open) {
+              this.navigateToPhoto(0);
+            }
+          }
         }
         if (this.delayedMediaShow) {
           this.onNavigateTo(this.delayedMediaShow);
@@ -243,7 +224,7 @@ export class GalleryLightboxComponent implements OnDestroy, OnInit {
   public nextImage(): void {
     if (this.activePhotoId + 1 < this.gridPhotoQL.length) {
       this.navigateToPhoto(this.activePhotoId + 1);
-    } else {
+    } else if (this.lightboxService.loopSlideshow) {
       this.navigateToPhoto(0);
     }
   }
@@ -427,13 +408,32 @@ export class GalleryLightboxComponent implements OnDestroy, OnInit {
     this.videoSourceError = true;
   }
 
-  togglePlayback(value: boolean): void {
-    if (this.slideShowRunning === value) {
+  private onNavigateTo(photoStringId: string): void {
+    if (
+      this.activePhoto &&
+      this.queryService.getMediaStringId(this.activePhoto.gridMedia.media) ===
+      photoStringId
+    ) {
       return;
     }
-    this.slideShowRunning = value;
-    // resets query. This side effect is to assign playback = true to the url
-    this.navigateToPhoto(this.activePhotoId);
+
+    if (this.controls) {
+      this.controls.resetZoom();
+    }
+    const photo = this.gridPhotoQL.find(
+      (i): boolean =>
+        this.queryService.getMediaStringId(i.gridMedia.media) === photoStringId
+    );
+    if (!photo) {
+      this.delayedMediaShow = photoStringId;
+      return;
+    }
+    if (this.status === LightboxStates.Closed) {
+      this.showLigthbox(photo.gridMedia.media);
+    } else {
+      this.showPhoto(this.gridPhotoQL.toArray().indexOf(photo));
+    }
+    this.delayedMediaShow = null;
   }
 
   private updateInfoPanelWidth() {
@@ -478,15 +478,16 @@ export class GalleryLightboxComponent implements OnDestroy, OnInit {
     this.router
       .navigate([], {
         queryParams: this.queryService.getParams(
-          {media: this.gridPhotoQL.get(photoIndex).gridMedia.media, playing: this.slideShowRunning}
+          {media: this.gridPhotoQL.get(photoIndex).gridMedia.media}
         ),
+        queryParamsHandling: 'merge', // keep existing params
         replaceUrl: true,
       })
       .then(() => {
         this.piTitleService.setMediaTitle(this.gridPhotoQL.get(photoIndex).gridMedia);
       })
       .catch((err) => {
-        console.error(`Cant navigate to photo ${photoIndex}`, err);
+        console.error(`Can't navigate to photo ${photoIndex}`, err);
       });
   }
 
